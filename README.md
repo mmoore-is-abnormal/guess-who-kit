@@ -17,6 +17,8 @@ Claude will ask:
 - **Photos**: optional Slack profile pictures (needs a one-time Chrome setting on your Mac; otherwise the board uses initials).
 - **Team names**: whether there's an official page with pod or team names to use.
 
+It can also turn on a **new-intel scout**: each time you open the published game, it looks for new Slack posts from people on the board, drafts clues, skips anything already used or overlapping, and holds them for your approval in the host view.
+
 Then it builds the roster from Glean, mines Slack, leaves out anything sensitive (health, family, relationships, religion, politics, money and similar), and publishes the game to you as a private Claude artifact. Skim the clues before game day; they're about your coworkers.
 
 Your finished game contains coworkers' names, photos and quotes. Keep it in a private artifact or a private repo, not this one.
@@ -25,7 +27,7 @@ Your finished game contains coworkers' names, photos and quotes. Keep it in a pr
 
 - **Space** reveals the next clue. Guessing after clue 1 is worth 3 points, clue 2 is 2, later clues 1. The last clue is always the person's team.
 - **Enter** unmasks. Each clue then links to its Slack post.
-- **→** next suspect. **T** starts or pauses the timer (pick 30-90 sec or Off in the header).
+- **→** next suspect. **T** starts or pauses the per-suspect timer (30-90 sec or Off). **G** starts or pauses the game clock (5-20 min or Off), which ends on a Time's up screen with final standings.
 - Click tiles to flip people down. **Flip down other teams** clears everyone outside the revealed team.
 - **Host view ↗** opens the answers in a second window: keep it off the shared screen. In the same browser it follows the game automatically. Anywhere else, type the **game code** shown at the top of the game screen and use ◀ ▶ to match the suspect number.
 
