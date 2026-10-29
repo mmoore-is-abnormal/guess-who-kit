@@ -1,61 +1,96 @@
-# Guess Who Kit
+# Team Bonsai Garden
 
-Build a "Guess Who" icebreaker about your own team. Claude pulls real fun facts from Slack, turns them into clues that go from vague to giveaway, and builds a screen-share game: a flip-down suspect board, a scoreboard, a timer, a private host view with the answers, and a link from every clue to the Slack post it came from.
+A shared bonsai the CE team grows together. Everyone waters, gives sunlight, prunes and feeds the same trees, and they grow from a seed to a Legendary bonsai over weeks of team care.
 
-This repo has no real people in it. `demo/index.html` runs on made-up sample data so you can see how it plays.
+![The welcome screen and vote](docs/welcome.png)
 
-## Make your own (with Claude)
+The project has three parts:
 
-1. Download `skill/guess-who-builder.zip`.
-2. In Claude (Cowork), go to **Customize → Skills → + Create skill → Upload a skill** and upload the zip.
-3. Start a new task and say something like "build a guess who game for my team" (or run `/guess-who-builder`).
+| | Where it runs | Status |
+|---|---|---|
+| [`web/`](web/) | A shared page on claude.ai (Claude Artifact with a shared database) | Live |
+| [`slack-app/`](slack-app/) | A Slack app: `/bonsai` posts the tree with care buttons (earlier three-pot design) | Needs Slack admin approval and a host |
+| [`reminders/`](reminders/) | Plans the daily Slack reminders and vote alerts | Runs as a scheduled Claude task |
 
-Claude will ask:
+The web page and the Slack app keep separate data.
 
-- **Who's in the game**: a manager's whole org, your immediate team, a Slack channel's members, or a list of names.
-- **Where to look**: #all-welcome intros, social channels, Slack profiles, team-channel banter. It asks separately before searching any private channel.
-- **Photos**: optional Slack profile pictures (needs a one-time Chrome setting on your Mac; otherwise the board uses initials).
-- **Team names**: whether there's an official page with pod or team names to use.
+## How it works
 
-It can also turn on a **new-intel scout**: each time you open the host view of the published game, it looks for new Slack posts from people on the board, drafts clues, skips anything already used or overlapping, and holds them for your approval in the host view.
+The team grows **one tree at a time**.
 
-Then it builds the roster from Glean, mines Slack, leaves out anything sensitive (health, family, relationships, religion, politics, money and similar), and publishes the game to you as a private Claude artifact. Skim the clues before game day; they're about your coworkers.
+1. **Vote.** Anyone can start a vote on the Welcome screen and choose how long it stays open: 1 hour, 4 hours, 24 hours or 7 days. Everyone picks a tree and a mode, and the top tree and top mode win (ties go to whichever got there first).
+2. **Plant.** When the vote closes, the winner is planted from seed. The species is locked until the next vote; the old tree retires to the **Hall of Fame** with its final stage and top caretakers.
+3. **Tend.** Everyone waters, gives sunlight, prunes and feeds it. Needs drain over time. Whoever starts a vote picks whether the next tree's needs pause on weekends or keep draining every day. Cooldowns: water and sun every 4 hours per person, prune every 12, feed once a day. Tending a need that's running low earns the most growth.
+4. **Talk to it.** "Talk to the tree" is always available in every mode and earns 1 growth point once an hour. The tree answers in a thought bubble.
+5. **Decorate.** Growth milestones unlock 15 cosmetic treasures (mushrooms, a lantern, a sleepy cat…), one per spot. They stay with the tree in the Hall of Fame.
 
-Your finished game contains coworkers' names, photos and quotes. Keep it in a private artifact or a private repo, not this one.
+### Modes and difficulty
 
-## Play
+- **Zen Garden (easy):** the tree never dies. It tells you exactly what it needs, actions you've just done are greyed out until their cooldown ends, and Water is greyed out while the soil is still damp.
+- **Greenhouse (hard, light stakes):** needs drain faster. If health falls below 30%, pests move in and growth stops until three different teammates treat them.
+- **Arena (hard, competitive):** a weekday streak of 3+ earns a bonus point per action, and the top caretakers earn titles (Head Gardener, Water Bearer, Sun Chaser, Shear Genius, Soil Whisperer, Pest Patrol, Longest streak).
 
-- **Space** reveals the next clue. Guessing after clue 1 is worth 3 points, clue 2 is 2, later clues 1. The last clue is always the person's team.
-- **Enter** unmasks. Each clue then links to its Slack post.
-- **→** next suspect. **T** starts or pauses the per-suspect timer (30-90 sec or Off). **G** starts or pauses the game clock (5-20 min or Off), which ends on a Time's up screen with final standings.
-- Click tiles to flip people down. **Flip down other teams** clears everyone outside the revealed team.
-- **Host view ↗** opens the answers in a second window: keep it off the shared screen. **Skip this person**, or the Skip toggle on any answer-key row, takes someone out of the game (handy if you're on the board yourself). In the same browser it follows the game automatically. Anywhere else, type the **game code** shown at the top of the game screen and use ◀ ▶ to match the suspect number.
+In the hard modes the tree only hints at its mood, and nothing is greyed out. Acting before your cooldown ends earns no points.
 
-## Modes, difficulty and replay
+**Waterlogging:** watering while the soil is still wet counts as overwatering. Two overwaterings within 12 hours waterlog the tree and growth pauses. Two different teammates can **drain the pot**, or it dries out on its own after 24 hours without water (12 if someone gives it sunlight).
 
-Set these in the setup bar above the case file. Changing any of them starts a new game.
+### Thoughts and sound
 
-- **Mode**: *Classic*; *Lightning* (one clue and the pod: 2 points, then 1; pairs well with the 15-second timer); *Two Truths & a Swap* (one clue secretly belongs to someone else; the unmask shows which, so give a bonus point to whoever called it); *Pod Showdown* (pods compete as teams and a pod can't score on its own member).
-- **Difficulty**: *Easy* shows the pod first; *Normal*; *Hard* drops the pod clue and only the first two clues score.
-- **Clues**: *New mix each game* draws a different set and order of clues per person from everything we found (core clues plus extras), always vague to specific. *Same every game* uses the original clues.
-- **Fresh faces first**: people who haven't come up recently go to the front of the deck.
-- **Season**: *Save this game to the season* adds the scoreboard to season standings (each game code can only be saved once, so nothing double-counts). *Start a new season* archives the champion.
-- **Points**: turn scoring off ("Off, just for fun") to hide the scoreboard, point values and season panel.
-- **Add a card** (host view): add clues for anyone on the board, or a whole new person with a pod and title, with an optional Slack link. Clues that overlap an existing one are skipped. Added cards go straight into the game and show ADDED in the host view; remove them from the same list.
-- **Fact bank** (host view): every fact by person, searchable and filterable by pod. **Pin** facts to build someone's card yourself (pinned facts replace the random mix), or **Leave out** facts you don't want in any game.
-- **Photos on new cards**: cards in the host view show the person's photo. When you add someone new by hand, you can attach a photo file.
-- **Sound**: reveal swoosh, unmask stamp, point chime, tile clicks, countdown ticks and a final fanfare. Toggle with the Sound button or **M**. Sound plays only in the game window, so it's what the room hears when you share with computer audio.
+The tree has a thought bubble that changes every so often and reacts to care. Thoughts depend on how it's doing (cute and whimsical when it's thriving, somber or sad when it's neglected, worried when it's waterlogged or has pests), its species, the time of day and day of the week, the season, and holidays. Holidays include Halloween, Thanksgiving, winter holidays, New Year, Valentine's Day, Earth Day, Arbor Day, Lunar New Year, Cybersecurity Awareness Month and the end of each Abnormal fiscal quarter. In Zen Garden the thoughts are clear hints; in the hard modes they're cryptic.
 
-The game code carries the mode, difficulty and clue setting (for example `4821-S-H`), so a host view anywhere can load the same game.
+Every action has a synthesized sound effect (no audio files). There's a Sound on/off switch under the title, remembered per browser.
 
-## Build by hand
+### Animation studio
 
-    python3 engine/build.py --data engine/sample-data.json --out index.html
+A preview-only tab to play every care animation (water, sunlight, prune, feed, pests, drain, talk, grow) on any species, stage and pot, and to try on treasures. Nothing there changes the shared garden.
 
-Add `--avatars grid.jpg` for photos, or `--artifact` to output page content for publishing as a Claude artifact. The data format is in `skill/guess-who-builder/references/data-format.md`.
+### Trees
 
-## Layout
+13 species in three groups:
 
-    engine/            template.html, build.py, sample-data.json
-    demo/index.html    the sample game
-    skill/             the guess-who-builder skill (folder and zip)
+- **Real:** juniper, Japanese maple, Japanese black pine, cherry blossom, wisteria, ficus
+- **Team-themed:** neural net (glowing node leaves), phish-hook tree (fish leaves and one suspicious hook)
+- **Fantasy:** crystal tree, ember tree, moonlight willow, cotton-candy tree, star tree
+
+![Some of the species](docs/species.png)
+
+Stages: Seed → Sprout → Seedling → Sapling → Pre-bonsai → Young bonsai → Shaped bonsai → Mature bonsai → Elder → Ancient → Legendary.
+
+### Admin
+
+The page owner and editors get an **Admin** tab with:
+
+- **Activity log:** every water, vote, vote started/closed/cancelled, rename and pest event, with who and when. Only admins can read it; each person's entries can only be written by that person.
+- **Leaderboard switch:** show or hide the leaderboard for the team. Points keep counting either way, and admins always see it.
+- **Vote controls:** close the open vote early (the current leader is planted) or cancel it (the current tree stays).
+- **Retire tree now:** ends the current tree early. It moves to the Hall of Fame and the pot stays empty until someone starts a vote.
+
+## Web version
+
+`web/bonsai-garden.html` is the source of the claude.ai page. It's a single file with no build step, written for Claude Artifacts, and uses two runtime capabilities:
+
+- `db` keeps the shared state: `polls` (votes, closing times and the weekends choice), `ballots` (one per person), `carers` (each person's points and care times per tree), `seasons` (each tree's name, pest, waterlogging and retirement status, plus one record per decorated spot), `settings` (leaderboard visibility), `activity` (the admin log) and `meta` (Slack reminder bookkeeping). Which tree is growing is derived from the closed polls, so there is no separate "current tree" record to get out of sync.
+- `user` gives each person's id and display name, and whether they're an admin (page owner or editor).
+
+This copy keeps the full HTML wrapper so it also works in Glean; the claude.ai copy drops the wrapper (claude.ai adds its own) and loads the Google Fonts. Opened anywhere else, the page shows a read-only view. To give teammates access, share the page from its Share menu at Contributor level.
+
+## Slack reminders
+
+`reminders/reminder.py` plans the Slack posts. It reads a dump of the page's database and prints the messages that are due: a daily check-in (weekdays, or every day for a tree that counts weekends), vote opened / closing soon / winner announcements, and a needs-care nudge when health drops low, pests arrive or the tree gets waterlogged. A scheduled Claude task runs it hourly on weekdays and posts the results to the team channel.
+
+## Slack version
+
+The Slack app still follows the earlier three-pot design (one tree per mode, species switching per mode); it hasn't been updated to the single-tree voting model yet. See [`slack-app/README.md`](slack-app/README.md) for setup and what to send IT. In short: Bolt for JavaScript in Socket Mode, three bot scopes (`commands`, `chat:write`, `users:read`), one JSON data file, Node 20.6+.
+
+```bash
+cd slack-app
+npm install
+npm test
+cp .env.example .env   # add your Slack tokens
+npm start
+```
+
+## Ideas for later
+
+- A prize mode where points count toward real team prizes, with points recomputed from the care log against the cooldown rules and winners confirmed by an admin
+- Bring the Slack app in line with the single-tree voting model
