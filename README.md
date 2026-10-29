@@ -42,6 +42,8 @@ Set these in the setup bar above the case file. Changing any of them starts a ne
 - **Season**: *Save this game to the season* adds the scoreboard to season standings (each game code can only be saved once, so nothing double-counts). *Start a new season* archives the champion.
 - **Points**: turn scoring off ("Off, just for fun") to hide the scoreboard, point values and season panel.
 - **Add a card** (host view): add clues for anyone on the board, or a whole new person with a pod and title, with an optional Slack link. Clues that overlap an existing one are skipped. Added cards go straight into the game and show ADDED in the host view; remove them from the same list.
+- **Fact bank** (host view): every fact by person, searchable and filterable by pod. **Pin** facts to build someone's card yourself (pinned facts replace the random mix), or **Leave out** facts you don't want in any game.
+- **Photos on new cards**: cards in the host view show the person's photo. When you add someone new by hand, you can attach a photo file.
 - **Sound**: reveal swoosh, unmask stamp, point chime, tile clicks, countdown ticks and a final fanfare. Toggle with the Sound button or **M**. Sound plays only in the game window, so it's what the room hears when you share with computer audio.
 
 The game code carries the mode, difficulty and clue setting (for example `4821-S-H`), so a host view anywhere can load the same game.

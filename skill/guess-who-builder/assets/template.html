@@ -216,6 +216,24 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 .season .stand li{font-size:16px}
 .pl .sm[disabled]{opacity:.4}
 .addcard{grid-column:1 / -1}
+.bank{grid-column:1 / -1}
+.bank-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bank-ctl input,.bank-ctl select{font:inherit;font-size:14px;padding:7px 9px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);flex:0 1 auto;min-width:0}
+.bank-ctl input{flex:1 1 220px}
+.bank-list{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+.bank-p{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px}
+.bank-p summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:700;list-style:none}
+.bank-p summary::-webkit-details-marker{display:none}
+.bank-p summary .hostlink{font-weight:400;margin-left:auto}
+.bank-f{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-top:1px dashed var(--line)}
+.bank-f:first-of-type{border-top:0}
+.bank-f.out .ftxt{text-decoration:line-through;color:var(--muted)}
+.bank-f.pin{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+.lv{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.06em;border-radius:4px;padding:2px 6px;border:1.5px solid var(--line);color:var(--muted);white-space:nowrap}
+.lv.l3{border-color:var(--accent);color:var(--accent)} .lv.l2{border-color:var(--gold);color:var(--ink)}
+.bank-f .acts{display:flex;gap:6px}
+.sm.on{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.acprev .li-av{width:44px;height:44px}
 .acform{display:flex;flex-direction:column;gap:12px}
 .acgrid{display:flex;flex-wrap:wrap;gap:10px 14px}
 .acgrid .fld{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -224,6 +242,9 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 .acrows{display:flex;flex-direction:column;gap:8px}
 .acrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,.6fr);gap:8px;align-items:center}
 @media (max-width:640px){.acrow{grid-template-columns:minmax(0,1fr)}}
+.li-av{width:34px;height:34px;border-radius:50%;flex:none;display:inline-grid;place-items:center;font-family:var(--f-mono);font-size:11px;font-weight:700;background-color:var(--tc);color:#fff;vertical-align:middle;margin-right:8px;background-repeat:no-repeat}
+.li-av.pic{color:transparent;background-image:var(--sprite);background-size:var(--sprite-size,1000% 1000%)}
+.li-av.pic[style*='url(']{background-size:cover}
 .addtag{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;background:var(--t1);color:#fff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle}
 </style>
 
@@ -386,12 +407,25 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
           <label class="fld acnew" hidden><span class="eyebrow">Name</span><input id="acName" maxlength="60" placeholder="Full name"></label>
           <label class="fld acnew" hidden><span class="eyebrow">Pod</span><select id="acTeam"></select></label>
           <label class="fld acnew" hidden><span class="eyebrow">Title</span><input id="acTitle" maxlength="80" placeholder="Optional"></label>
+          <label class="fld acnew" hidden><span class="eyebrow">Photo (optional)</span><input id="acPhoto" type="file" accept="image/*"></label>
+          <span class="acprev acnew" id="acPrev" hidden></span>
         </div>
         <div class="acrows" id="acRows"></div>
         <div class="ctl"><button class="btn primary" type="submit">Add to the deck</button><span class="hostlink" id="acMsg" role="status"></span></div>
         <p class="hostlink">Use facts the person shared themselves and would be happy to see on the shared screen. Cards you add here go straight into the game, marked ADDED in this view.</p>
       </form>
       <ul class="intel-list" id="acList"></ul>
+    </section>
+    <section class="hcard bank" id="bank">
+      <div class="intel-top"><h3>Fact bank</h3><span class="hostlink" id="bankCount"></span></div>
+      <p class="hostlink">Every fact in the game, by person. <strong>Pin</strong> facts to build someone's card yourself (pinned facts are used instead of the random mix), or <strong>Leave out</strong> facts you don't want in any game. Changes apply to the next suspect shown.</p>
+      <div class="bank-ctl">
+        <input id="bankQ" type="search" placeholder="Search facts or names" aria-label="Search the fact bank">
+        <select id="bankPod" aria-label="Filter by pod"></select>
+        <select id="bankShow" aria-label="Show"><option value="all">All facts</option><option value="pinned">Pinned</option><option value="out">Left out</option></select>
+        <button class="btn" id="bankClear" type="button">Clear all pins</button>
+      </div>
+      <div class="bank-list" id="bankList"></div>
     </section>
   </div>
 </div>
@@ -414,14 +448,17 @@ try{ MANUAL = JSON.parse(localStorage.getItem('gw-'+((DATA.meta||{}).slug||'game
 function applyExtras(){
   for(let i=DATA.people.length-1;i>=0;i--) if(DATA.people[i].manual){ delete byName[DATA.people[i].n]; delete BASE[DATA.people[i].n]; DATA.people.splice(i,1); }
   DATA.people.forEach(p=>{ const b=BASE[p.n]; if(b){ p.c=b.c.slice(); p.cs=b.cs.slice(); } });
-  MANUAL.filter(m=>m.kind==='person' && m.name && !byName[m.name] && DATA.teams[m.team]).forEach(m=>{ const p={n:m.name, t:m.team, ti:m.title||'', c:[], cs:[], x:[], manual:true}; DATA.people.push(p); byName[p.n]=p; BASE[p.n]={c:[],cs:[]}; });
+  MANUAL.filter(m=>m.kind==='person' && m.name && !byName[m.name] && DATA.teams[m.team]).forEach(m=>{ const p={n:m.name, t:m.team, ti:m.title||'', c:[], cs:[], x:[], manual:true, photo:m.photo||null}; DATA.people.push(p); byName[p.n]=p; BASE[p.n]={c:[],cs:[]}; });
   const ins = (p, clue, level, src) => { if(!p || !clue || p.c.length>=8) return; if(p.c.some(x=>sim2(x,clue)>=0.6)) return; const at = level<=1 ? 0 : level===2 ? Math.ceil(p.c.length/2) : p.c.length; p.c.splice(at,0,clue); p.cs.splice(at,0,src); };
   SCOUT_CARDS.filter(c=>c.status==='approved').sort((a,b)=>(a.foundAt||0)-(b.foundAt||0)).forEach(c=>ins(byName[c.name], c.clue, c.level, {s:c.src, u:c.url, q:c.quote, card:true}));
   MANUAL.filter(m=>m.kind==='clue').sort((a,b)=>(a.at||0)-(b.at||0)).forEach(m=>ins(byName[m.name], m.clue, m.level, {s:'Added by host', u:m.link||'', q:'', manual:true}));
   playable = DATA.people.filter(hasClues);
 }
 if(DATA.sprite){ document.documentElement.style.setProperty('--sprite', `url(${DATA.sprite})`); document.documentElement.style.setProperty('--sprite-size', `${DATA.cols*100}% ${DATA.rows*100}%`); }
+const avatarFor = n => { const p = byName[n]; if(!p) return ''; return `<span class="av li-av${hasPic(p)?' pic':''}" style="--tc:${tc(p.t)};${picStyle(p)}" aria-hidden="true">${initials(p.n)}</span>`; };
+const hasPic = p => !!(p && (p.photo || (DATA.sprite && p.i!=null)));
 function picStyle(p){
+  if(p && p.photo) return `background-image:url("${p.photo}");background-size:cover;background-position:center;`;
   if(!DATA.sprite || p.i==null) return '';
   const C=DATA.cols, R=DATA.rows, c=p.i%C, r=Math.floor(p.i/C);
   return `background-position:${C>1?c/(C-1)*100:0}% ${R>1?r/(R-1)*100:0}%;`;
@@ -432,7 +469,7 @@ let S = {scoring:true, mode:'classic', diff:'normal', vary:true, fresh:true, pod
 let linked = false;
 
 let bc=null; try{ bc = new BroadcastChannel(KEY); bc.onmessage = e => { if(e.data && e.data.ping){ if(!IS_HOST() && S.deck.length) store(); return; } if(e.data && e.data.rev > S.rev){ S = e.data; linked = true; render(); } }; }catch(e){}
-window.addEventListener('storage', e => { if(e.key===KEY+'-manual'){ try{ MANUAL = JSON.parse(e.newValue||'[]')||[]; }catch(x){} applyExtras(); render(); return; } if(e.key===KEY+'-season'){ try{ SEASON = JSON.parse(e.newValue)||SEASON; }catch(x){} renderSeason(); return; } if(e.key===KEY){ const v = load(); if(v && v.rev > S.rev){ S = v; linked = true; render(); } } });
+window.addEventListener('storage', e => { if(e.key===KEY+'-manual'){ try{ MANUAL = JSON.parse(e.newValue||'[]')||[]; }catch(x){} applyExtras(); render(); return; } if(e.key===KEY+'-bank'){ try{ BANK = JSON.parse(e.newValue)||BANK; }catch(x){} render(); return; } if(e.key===KEY+'-season'){ try{ SEASON = JSON.parse(e.newValue)||SEASON; }catch(x){} renderSeason(); return; } if(e.key===KEY){ const v = load(); if(v && v.rev > S.rev){ S = v; linked = true; render(); } } });
 function store(){ S.rev = Math.max(Date.now(), (S.rev||0) + 1); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} try{ bc && bc.postMessage(S); }catch(e){} }
 function load(){ try{ const v = JSON.parse(localStorage.getItem(KEY)||'null'); if(v && Array.isArray(v.deck)) return v; }catch(e){} return null; }
 
@@ -449,6 +486,7 @@ function remote(path, data){ if(!SDB) return; chains[path] = (chains[path]||Prom
   db.doc('season/current').onSnapshot(s=>{ if(s.exists){ SEASON = s.data(); LSset('season', SEASON); renderSeason(); } }, ()=>{});
   db.doc('history/seen').onSnapshot(s=>{ if(s.exists){ HIST = s.data().seen || {}; LSset('hist', HIST); } }, ()=>{});
   db.collection('games').onSnapshot(sn=>{ sn.docs.forEach(d=>{ GAMES[d.id] = d.data(); }); LSset('games', GAMES); }, ()=>{});
+  db.doc('bank/choices').onSnapshot(s=>{ if(s.exists){ const d=s.data(); BANK = {pins:d.pins||{}, out:d.out||[]}; LSset('bank', BANK); render(); } }, ()=>{});
   db.collection('manual').onSnapshot(sn=>{ MANUAL = sn.docs.map(d=>({id:d.id, ...d.data()})); LSset('manual', MANUAL); applyExtras(); render(); }, ()=>{});
 })();
 function rememberGame(){
@@ -496,6 +534,8 @@ function renderSeason(){
 
 /* ---------- add cards by hand ---------- */
 const LEVELS = ['Vague','Medium','Giveaway'];
+let PENDING_PHOTO = null;
+function readPhoto(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{ const s=Math.min(im.naturalWidth,im.naturalHeight); const c=document.createElement('canvas'); c.width=c.height=96; c.getContext('2d').drawImage(im,(im.naturalWidth-s)/2,(im.naturalHeight-s)/2,s,s,0,0,96,96); res(c.toDataURL('image/jpeg',.85)); }; im.onerror=rej; im.src=fr.result; }; fr.onerror=rej; fr.readAsDataURL(file); }); }
 function renderAddCard(){
   if(!$('addCard')) return;
   const who = $('acWho'), cur = who.value;
@@ -506,7 +546,7 @@ function renderAddCard(){
   if(!$('acRows').children.length) $('acRows').innerHTML = [1,2,3].map(i=>`<div class="acrow"><input id="acC${i}" maxlength="140" placeholder="${i===1?'Clue, e.g. Has a cat named Biscuit':'Another clue (optional)'}" aria-label="Clue ${i}"><select id="acL${i}" aria-label="How specific is clue ${i}">${LEVELS.map((l,k)=>`<option value="${k+1}" ${k+1===i?'selected':''}>${l}</option>`).join('')}</select><input id="acU${i}" placeholder="Slack link (optional)" aria-label="Source link for clue ${i}"></div>`).join('');
   document.querySelectorAll('.acnew').forEach(el=>el.hidden = who.value!=='__new');
   const mine = MANUAL.slice().sort((a,b)=>(b.at||0)-(a.at||0));
-  $('acList').innerHTML = mine.length ? mine.map(m=>`<li data-id="${esc(m.id)}"><div><span class="who2">${esc(m.name)}</span><span class="lvl">${m.kind==='person' ? 'new person · '+esc(DATA.teams[m.team]||'') : (LEVELS[(m.level||2)-1]||'')}</span>${m.kind==='clue'?`<div>${esc(m.clue)}</div>`:''}${m.link?`<a class="csrc" href="${esc(m.link)}" target="_blank" rel="noopener">↗ source</a>`:''}</div><div class="acts"><button class="sm" data-rm="${esc(m.id)}" type="button">Remove</button></div></li>`).join('') : '';
+  $('acList').innerHTML = mine.length ? mine.map(m=>`<li data-id="${esc(m.id)}"><div>${avatarFor(m.name)}<span class="who2">${esc(m.name)}</span><span class="lvl">${m.kind==='person' ? 'new person · '+esc(DATA.teams[m.team]||'') : (LEVELS[(m.level||2)-1]||'')}</span>${m.kind==='clue'?`<div>${esc(m.clue)}</div>`:''}${m.link?`<a class="csrc" href="${esc(m.link)}" target="_blank" rel="noopener">↗ source</a>`:''}</div><div class="acts"><button class="sm" data-rm="${esc(m.id)}" type="button">Remove</button></div></li>`).join('') : '';
 }
 async function saveManual(entries){
   entries.forEach(e=>{ e.id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); e.at = Date.now(); });
@@ -527,7 +567,7 @@ function submitCard(e){
     name = $('acName').value.trim().replace(/\s+/g,' ');
     if(!name){ msg.textContent = 'Give the new person a name.'; return; }
     if(DATA.people.some(p=>p.n.toLowerCase()===name.toLowerCase())){ msg.textContent = `${name} is already on the board. Pick them from the list instead.`; return; }
-    entries.push({kind:'person', name, team:$('acTeam').value, title:$('acTitle').value.trim()});
+    entries.push({kind:'person', name, team:$('acTeam').value, title:$('acTitle').value.trim(), photo: PENDING_PHOTO || null});
   }
   const p = byName[name]; const have = p ? p.c.concat((p.x||[]).map(x=>x.t)) : [];
   const skipped = [];
@@ -539,10 +579,43 @@ function submitCard(e){
   });
   if(!entries.some(x=>x.kind==='clue')){ msg.textContent = skipped.length ? `Skipped: too close to a clue ${name} already has.` : 'Write at least one clue.'; return; }
   saveManual(entries);
-  [1,2,3].forEach(i=>{ $('acC'+i).value=''; $('acU'+i).value=''; }); $('acName').value=''; $('acTitle').value='';
+  [1,2,3].forEach(i=>{ $('acC'+i).value=''; $('acU'+i).value=''; }); $('acName').value=''; $('acTitle').value=''; $('acPhoto').value=''; PENDING_PHOTO=null; $('acPrev').innerHTML='';
   $('acWho').value = name;
   const n = entries.filter(x=>x.kind==='clue').length;
   msg.textContent = `Added ${n} clue${n>1?'s':''} for ${name}.` + (skipped.length ? ` Skipped ${skipped.length} that overlapped an existing clue.` : '');
+}
+
+/* ---------- fact bank: pins and leave-outs ---------- */
+let BANK = LS('bank') || {pins:{}, out:[]};
+const factKey = (n,t) => 'f' + strHash(n+'|'+t).toString(36);
+function bankSave(){ LSset('bank', BANK); remote('bank/choices', BANK); }
+function allFacts(p){ const pool = poolOf(p); return pool.map(f=>({...f, k:factKey(p.n,f.t)})); }
+function renderBank(){
+  if(!$('bank') || !IS_HOST()) return;
+  if(!$('bankPod').options.length) $('bankPod').innerHTML = '<option value="">All pods</option>' + TEAM_KEYS.map(k=>`<option value="${k}">${esc(DATA.teams[k])}</option>`).join('');
+  const q = $('bankQ').value.trim().toLowerCase(), pod = $('bankPod').value, show = $('bankShow').value;
+  let total = 0, shownN = 0;
+  const open = new Set([...document.querySelectorAll('#bankList details[open]')].map(d=>d.dataset.n));
+  const html = DATA.people.slice().sort((a,b)=>a.n.localeCompare(b.n)).map(p=>{
+    if(pod && p.t!==pod) return '';
+    const facts = allFacts(p); total += facts.length;
+    const pins = BANK.pins[p.n] || [];
+    const rows = facts.filter(f=>{
+      if(show==='pinned' && !pins.includes(f.k)) return false;
+      if(show==='out' && !BANK.out.includes(f.k)) return false;
+      if(q && !(p.n.toLowerCase().includes(q) || f.t.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    if(!rows.length) return '';
+    shownN += rows.length;
+    const isOpen = open.has(p.n) || (q && rows.length<=6) || show!=='all';
+    return `<details class="bank-p" data-n="${esc(p.n)}" ${isOpen?'open':''}><summary>${avatarFor(p.n)}${esc(p.n)}<span class="hostlink">${facts.length} fact${facts.length===1?'':'s'}${pins.length?` · ${pins.length} pinned`:''}</span></summary>` +
+      rows.map(f=>{ const pin = pins.includes(f.k), out = BANK.out.includes(f.k);
+        return `<div class="bank-f ${pin?'pin':''} ${out?'out':''}"><span class="lv l${f.l}">${LEVELS[f.l-1]||''}</span><div class="ftxt">${esc(f.t)}${f.s&&f.s.card?'<span class="newtag">NEW</span>':''}${f.s&&f.s.manual?'<span class="addtag">ADDED</span>':''}${f.s?srcLink(f.s):''}</div><div class="acts"><button type="button" class="sm ${pin?'on':''}" data-pin="${f.k}" data-n="${esc(p.n)}" aria-pressed="${pin}">${pin?'Pinned':'Pin'}</button><button type="button" class="sm ${out?'on':''}" data-out="${f.k}" aria-pressed="${out}">${out?'Left out':'Leave out'}</button></div></div>`; }).join('') + '</details>';
+  }).join('');
+  $('bankList').innerHTML = html || '<p class="hostlink">No facts match.</p>';
+  const pinned = Object.values(BANK.pins).reduce((a,v)=>a+v.length,0);
+  $('bankCount').textContent = `${total} facts · ${pinned} pinned · ${BANK.out.length} left out` + (shownN!==total ? ` · showing ${shownN}` : '');
 }
 
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -593,8 +666,12 @@ function poolOf(p){
   return p.c.map((t,i)=>({t, s:p.cs[i], l: n===1?2 : i===0?1 : i===n-1?3 : 2})).concat((p.x||[]).map(e=>({t:e.t, s:e.s, l:e.l||2})));
 }
 function drawFor(p){
-  const pool = poolOf(p);
-  if(!S.vary && p.c.length) return pool.slice(0, p.c.length);
+  const all = poolOf(p).map(f=>({...f, k:factKey(p.n,f.t)}));
+  const pins = (BANK.pins[p.n]||[]);
+  const pinned = all.filter(f=>pins.includes(f.k) && !BANK.out.includes(f.k));
+  if(pinned.length) return pinned.sort((a,b)=>a.l-b.l);
+  const pool = all.filter(f=>!BANK.out.includes(f.k));
+  if(!S.vary && p.c.length) return all.slice(0, p.c.length).filter(f=>!BANK.out.includes(f.k));
   const r = rng(strHash(S.seed+'|'+p.n));
   const want = Math.min(pool.length, Math.max(3, p.c.length));
   const by = {1:[],2:[],3:[]}; seededShuffle(pool, r).forEach(c=>by[c.l].push(c));
@@ -734,7 +811,7 @@ function render(){
   $('tlen').value = String(S.tlen||0); $('glen').value = String(S.glen||0);
   $('mode').value = S.mode; $('diff').value = S.diff; $('vary').value = S.vary ? '1' : '0'; $('fresh').checked = !!S.fresh;
   $('modeDesc').textContent = [MODES[S.mode].desc, DIFFS[S.diff]].filter(Boolean).join(' ');
-  renderSeason(); renderAddCard();
+  renderSeason(); renderAddCard(); renderBank();
   $('scoring').value = S.scoring ? '1' : '0';
   $('scoreSec').hidden = !S.scoring; $('season').hidden = !S.scoring; $('worth').hidden = !S.scoring;
   $('gcode').textContent = codeOf() || '—';
@@ -770,8 +847,8 @@ function renderGame(){
     caseEl.classList.toggle('revealed', S.revealed);
     const mug=$('mug');
     if(S.revealed){
-      const hasPic = DATA.sprite && p.i!=null;
-      mug.className='mug on'+(hasPic?' pic':''); mug.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; mug.textContent=initials(p.n);
+      const pic1 = hasPic(p);
+      mug.className='mug on'+(pic1?' pic':''); mug.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; mug.textContent=initials(p.n);
       $('nm').textContent=p.n; $('meta').textContent=`${p.ti} · ${DATA.teams[p.t]}`;
       $('sources').hidden=false;
       $('sources').innerHTML = '<span>Each clue links to the Slack post it came from.</span>';
@@ -795,7 +872,7 @@ function renderBoard(){
         if(S.down.includes(x.n)) cls.push('down');
         if(S.done.includes(x.n)) cls.push('done');
         if(S.revealed && p && p.n===x.n) cls.push('answer');
-        const pic = DATA.sprite && x.i!=null;
+        const pic = hasPic(x);
         return `<button type="button" class="${cls.join(' ')}" style="--tc:${tc(k)}" data-n="${esc(x.n)}" aria-pressed="${S.down.includes(x.n)}"><span class="av${pic?' pic':''}" style="${picStyle(x)}">${initials(x.n)}</span><span class="tn">${esc(x.n)}</span></button>`;
       }).join('') + `</div></div>`;
   }).join('');
@@ -832,8 +909,8 @@ function renderHost(){
   else {
     $('hId').textContent = `Now playing · Suspect ${S.idx+1} of ${S.deck.length}` + (S.revealed?' · unmasked':(S.scoring?` · worth ${worth()||'—'} pts`:''));
     $('hName').textContent = p.n; $('hMeta').textContent = `${p.ti} · ${DATA.teams[p.t]}`;
-    const hasPic = DATA.sprite && p.i!=null; const m=$('hMug');
-    m.className='mug on'+(hasPic?' pic':''); m.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; m.textContent=initials(p.n);
+    const m=$('hMug');
+    m.className='mug on'+(hasPic(p)?' pic':''); m.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; m.textContent=initials(p.n);
     const items = itemsFor(p);
     $('hClues').innerHTML = items.map((it,i)=>{ const on = S.revealed||i<S.shown; const s=it.src; return `<li class="${on?'on':''}"><b>${on?'✓':i+1}</b><span>${it.team?'Pod: ':''}${esc(it.txt)}${s&&s.card?'<span class="newtag">NEW</span>':''}${s&&s.manual?'<span class="addtag">ADDED</span>':''}${it.swap?`<span class="swaptag">↔ Swap: belongs to ${esc(it.swap)}</span>`:''}${s?`<span class="hq">“${esc(s.q)}”</span>${srcLink(s)}`:''}</span></li>`; }).join('');
   }
@@ -873,6 +950,16 @@ $('fresh').onchange=e=>{ S.fresh=e.target.checked; newGame(); };
 $('soundBtn').onclick=()=>setSound(!SOUND); setSound(SOUND);
 $('scoring').onchange=e=>{ S.scoring = e.target.value==='1'; store(); render(); };
 $('acForm').addEventListener('submit', submitCard);
+$('acPhoto').addEventListener('change', async e=>{ const f=e.target.files[0]; PENDING_PHOTO=null; $('acPrev').innerHTML=''; if(!f) return; try{ PENDING_PHOTO = await readPhoto(f); $('acPrev').innerHTML = `<span class="av li-av pic" style="background-image:url('${PENDING_PHOTO}');background-size:cover"></span>`; }catch(err){ $('acMsg').textContent = 'That file didn\'t load as an image.'; } });
+['bankQ','bankPod','bankShow'].forEach(id=>$(id).addEventListener('input', renderBank));
+$('bankList').addEventListener('click', e=>{
+  const pb=e.target.closest('[data-pin]'), ob=e.target.closest('[data-out]');
+  if(pb){ const n=pb.dataset.n, k=pb.dataset.pin; const a=BANK.pins[n]||[]; BANK.pins[n] = a.includes(k) ? a.filter(x=>x!==k) : a.concat(k); if(!BANK.pins[n].length) delete BANK.pins[n]; BANK.out = BANK.out.filter(x=>x!==k); }
+  else if(ob){ const k=ob.dataset.out; BANK.out = BANK.out.includes(k) ? BANK.out.filter(x=>x!==k) : BANK.out.concat(k); Object.keys(BANK.pins).forEach(n=>{ BANK.pins[n]=BANK.pins[n].filter(x=>x!==k); if(!BANK.pins[n].length) delete BANK.pins[n]; }); }
+  else return;
+  bankSave(); store(); render();
+});
+$('bankClear').onclick=()=>{ BANK.pins = {}; bankSave(); store(); render(); };
 $('acWho').addEventListener('change', ()=>{ document.querySelectorAll('.acnew').forEach(el=>el.hidden = $('acWho').value!=='__new'); $('acMsg').textContent=''; });
 $('acList').addEventListener('click', e=>{ const b=e.target.closest('[data-rm]'); if(b) removeManual(b.dataset.rm); });
 $('seasonSave').onclick=saveToSeason; $('overSave').onclick=saveToSeason; $('seasonNew').onclick=endSeason;
@@ -944,7 +1031,7 @@ function start(snap){
   function renderSkips(){
     const box=$('skipBox'); box.hidden = !editor || !SKIPS.length; if(box.hidden) return;
     $('skipSum').textContent = `Posts the scout skipped (${SKIPS.length}): turn one into a card yourself`;
-    $('skipList').innerHTML = SKIPS.map((k,i)=>`<li><div><span class="who2">${esc(k.name||'')}</span><span class="lvl">${esc(k.time||'')}</span><div class="hq">“${esc(k.text)}”</div>${k.url?`<a class="csrc" href="${esc(k.url)}" target="_blank" rel="noopener">↗ Slack</a>`:''}</div><div class="acts"><button class="sm award" data-use="${i}" type="button">Make a card</button></div></li>`).join('');
+    $('skipList').innerHTML = SKIPS.map((k,i)=>`<li><div>${avatarFor(k.name)}<span class="who2">${esc(k.name||'')}</span><span class="lvl">${esc(k.time||'')}</span><div class="hq">“${esc(k.text)}”</div>${k.url?`<a class="csrc" href="${esc(k.url)}" target="_blank" rel="noopener">↗ Slack</a>`:''}</div><div class="acts"><button class="sm award" data-use="${i}" type="button">Make a card</button></div></li>`).join('');
   }
   $('skipList').addEventListener('click', e=>{ const b=e.target.closest('[data-use]'); if(!b) return; const k=SKIPS[+b.dataset.use]; if(!k) return;
     if(byName[k.name]) $('acWho').value = k.name; document.querySelectorAll('.acnew').forEach(el=>el.hidden = $('acWho').value!=='__new');
@@ -959,7 +1046,7 @@ function start(snap){
     note.textContent = pend.length ? `${pend.length} new clue${pend.length>1?'s':''} waiting for your review in Host view.` : '';
     if(!editor) return;
     const list = cards.filter(c=>c.status!=='rejected' || Date.now()-(c.foundAt||0) < 864e5).sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1) || (b.foundAt||0)-(a.foundAt||0)).slice(0,30);
-    $('intelList').innerHTML = list.length ? list.map(c=>`<li class="${c.status}" data-id="${esc(c.id)}"><div><span class="who2">${esc(c.name)}</span><span class="lvl">${['','vague','medium','specific'][c.level]||''} · ${esc(c.status)}</span><div>${esc(c.clue)}</div><span class="hq">“${esc(c.quote)}”</span>${c.url?`<a class="csrc" href="${esc(c.url)}" target="_blank" rel="noopener">↗ ${esc(c.src)}</a>`:''}</div><div class="acts">${c.status==='pending'?'<button class="sm award" data-v="approved" type="button">Approve</button><button class="sm" data-v="rejected" type="button">Reject</button>':`<button class="sm" data-v="pending" type="button">Undo</button>`}</div></li>`).join('') : '<li><span class="hostlink">No new cards yet.</span></li>';
+    $('intelList').innerHTML = list.length ? list.map(c=>`<li class="${c.status}" data-id="${esc(c.id)}"><div>${avatarFor(c.name)}<span class="who2">${esc(c.name)}</span><span class="lvl">${['','vague','medium','specific'][c.level]||''} · ${esc(c.status)}</span><div>${esc(c.clue)}</div><span class="hq">“${esc(c.quote)}”</span>${c.url?`<a class="csrc" href="${esc(c.url)}" target="_blank" rel="noopener">↗ ${esc(c.src)}</a>`:''}</div><div class="acts">${c.status==='pending'?'<button class="sm award" data-v="approved" type="button">Approve</button><button class="sm" data-v="rejected" type="button">Reject</button>':`<button class="sm" data-v="pending" type="button">Undo</button>`}</div></li>`).join('') : '<li><span class="hostlink">No new cards yet.</span></li>';
   }
   $('intelList').addEventListener('click', async e=>{
     const b=e.target.closest('button[data-v]'); if(!b||!db) return; const id=b.closest('li').dataset.id;
