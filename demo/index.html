@@ -342,7 +342,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
       <div class="intel-top"><h3>New intel</h3><button class="btn" id="intelRun" type="button">Check Slack now</button></div>
       <p class="hostlink" id="intelStatus"></p>
       <ul class="intel-list" id="intelList"></ul>
-      <p class="hostlink">Each time an editor opens the game, the scout looks for new posts from people on the board (at most every few hours), drafts clues with Claude, and skips anything already used. Nothing joins the deck until you approve it here.</p>
+      <p class="hostlink">Each time you open this host view, the scout looks for new posts from people on the board (at most every few hours), drafts clues with Claude, and skips anything already used. Nothing joins the deck until you approve it here.</p>
     </section>
   </div>
 </div>
@@ -628,7 +628,8 @@ function start(snap){
   const usedUrls = new Set(DATA.people.flatMap(p=>(p.cs||[]).map(c=>normUrl(c.u))).filter(Boolean));
   const bySid = Object.fromEntries(DATA.people.filter(p=>p.sid).map(p=>[p.sid,p.n]));
   const SERVER = SC.server || 'Slack', TOOL = 'slack_search_public_and_private';
-  let db=null, editor=false, cards=[], running=false;
+  let db=null, editor=false, cards=[], running=false, leased=false;
+  const TAB = 't' + Math.random().toString(36).slice(2);
   const MAXC = 5;
 
   function applyCards(){
@@ -679,8 +680,9 @@ function start(snap){
       const st = await db.doc('scout/state').get(); const s = st.exists ? st.data() : {};
       const every = (SC.everyHours||6)*3600e3;
       if(!manual && s.lastRun && Date.now()-s.lastRun < every){ status(`Last checked ${new Date(s.lastRun).toLocaleString()}. Next automatic check after ${new Date(s.lastRun+every).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.`); return; }
-      const lock = db.doc('scout/lock');
-      if(lock.acquire){ const l = await lock.acquire({holder:'v'+Math.random().toString(36).slice(2), ttlMs:180000}); if(!l.acquired){ status('Another window is checking Slack right now.'); return; } }
+      const run = db.doc('scout/run');
+      if(!manual){ const r = await run.get(); const rd = r.exists ? r.data() : {}; if(rd.until > Date.now() && rd.holder !== TAB){ status('Another window is checking Slack right now. Use "Check Slack now" to check from here instead.'); return; } }
+      await run.set({holder:TAB, until:Date.now()+120000}); leased = true;
       const mcp = await C.use('mcp'), sample = await C.use('sample');
       if(!mcp || !sample){ status('The scout needs Slack and Claude access, which this view doesn\'t have.'); return; }
       const since = s.lastScan || SC.since || new Date(Date.now()-7*864e5).toISOString().slice(0,10);
@@ -741,7 +743,7 @@ Reply with only a JSON array (empty if nothing qualifies). Each item: {"mid": me
     }catch(err){
       const code = err && err.code;
       status(code==='not_granted'||code==='consent_required' ? 'Slack access wasn\'t allowed, so the scout couldn\'t check. Use "Check Slack now" to try again.' : code==='rate_limited' ? 'Slack or Claude is busy right now. Try again in a bit.' : 'The scout hit a problem: '+(err && (err.message||code) || err));
-    }finally{ running=false; $('intelRun').disabled=false; renderIntel(); }
+    }finally{ if(leased){ try{ await db.doc('scout/run').set({holder:'', until:0}); }catch(e){} leased=false; } running=false; $('intelRun').disabled=false; renderIntel(); }
   }
 
   (async()=>{
@@ -752,7 +754,8 @@ Reply with only a JSON array (empty if nothing qualifies). Each item: {"mid": me
       applyCards(); render(); renderIntel();
     }, ()=>{});
     renderIntel();
-    if(editor) setTimeout(()=>scout(false), 1500);
+    if(editor && IS_HOST()) setTimeout(()=>scout(false), 1500);
+    window.addEventListener('hashchange', ()=>{ if(editor && IS_HOST()) scout(false); });
   })();
 })();
 

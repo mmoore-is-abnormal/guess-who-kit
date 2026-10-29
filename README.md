@@ -17,7 +17,7 @@ Claude will ask:
 - **Photos**: optional Slack profile pictures (needs a one-time Chrome setting on your Mac; otherwise the board uses initials).
 - **Team names**: whether there's an official page with pod or team names to use.
 
-It can also turn on a **new-intel scout**: each time you open the published game, it looks for new Slack posts from people on the board, drafts clues, skips anything already used or overlapping, and holds them for your approval in the host view.
+It can also turn on a **new-intel scout**: each time you open the host view of the published game, it looks for new Slack posts from people on the board, drafts clues, skips anything already used or overlapping, and holds them for your approval in the host view.
 
 Then it builds the roster from Glean, mines Slack, leaves out anything sensitive (health, family, relationships, religion, politics, money and similar), and publishes the game to you as a private Claude artifact. Skim the clues before game day; they're about your coworkers.
 
