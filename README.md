@@ -29,7 +29,7 @@ Your finished game contains coworkers' names, photos and quotes. Keep it in a pr
 - **Enter** unmasks. Each clue then links to its Slack post.
 - **→** next suspect. **T** starts or pauses the per-suspect timer (30-90 sec or Off). **G** starts or pauses the game clock (5-20 min or Off), which ends on a Time's up screen with final standings.
 - Click tiles to flip people down. **Flip down other teams** clears everyone outside the revealed team.
-- **Host view ↗** opens the answers in a second window: keep it off the shared screen. In the same browser it follows the game automatically. Anywhere else, type the **game code** shown at the top of the game screen and use ◀ ▶ to match the suspect number.
+- **Host view ↗** opens the answers in a second window: keep it off the shared screen. **Skip this person**, or the Skip toggle on any answer-key row, takes someone out of the game (handy if you're on the board yourself). In the same browser it follows the game automatically. Anywhere else, type the **game code** shown at the top of the game screen and use ◀ ▶ to match the suspect number.
 
 ## Build by hand
 

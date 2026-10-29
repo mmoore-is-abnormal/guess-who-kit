@@ -184,6 +184,10 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 .key td:first-child{font-family:var(--f-mono);color:var(--muted);width:3.5ch;font-variant-numeric:tabular-nums}
 .key tr.cur td{background:color-mix(in srgb,var(--gold) 22%,transparent);font-weight:700}
 .key tr.dn td{color:var(--muted);text-decoration:line-through}
+.key tr.sk td{color:var(--muted);text-decoration:line-through;font-style:italic}
+.key td.skc{width:1%;white-space:nowrap;text-decoration:none!important;font-style:normal!important}
+.key .skb{font:inherit;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;border:1.5px solid var(--line);background:transparent;color:var(--muted)}
+.key tr.sk .skb{border-color:var(--accent);color:var(--accent)}
 .keywrap{max-height:60vh;overflow:auto}
 .upnext{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 .hostlink{color:var(--muted);font-size:13px}
@@ -320,10 +324,12 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
         <button class="btn primary" id="hNext" type="button">Reveal indicator</button>
         <button class="btn gold" id="hUnmask" type="button">Unmask</button>
         <button class="btn" id="hSkip" type="button">Next suspect</button>
+        <button class="btn" id="hPass" type="button" title="Take this person out of the game and move on">Skip this person</button>
         <button class="btn" id="hT" type="button">Start timer</button>
         <span class="tchip" id="hTchip" hidden></span>
         <button class="gclock" id="hG" type="button" hidden><small>Game</small><span id="hGT"></span></button>
       </div>
+      <p class="hostlink" id="hPassNote" hidden></p>
       <h3>Up next</h3>
       <ol class="upnext" id="hUp"></ol>
     </section>
@@ -360,7 +366,7 @@ function picStyle(p){
 }
 const IS_HOST = () => location.hash === '#host';
 
-let S = {pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, glen:0, gEnd:null, gLeft:null, gOver:false, gDismiss:false, rev:0};
+let S = {pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, glen:0, gEnd:null, gLeft:null, gOver:false, gDismiss:false, skip:[], rev:0};
 let linked = false;
 
 let bc=null; try{ bc = new BroadcastChannel(KEY); bc.onmessage = e => { if(e.data && e.data.ping){ if(!IS_HOST() && S.deck.length) store(); return; } if(e.data && e.data.rev > S.rev){ S = e.data; linked = true; render(); } }; }catch(e){}
@@ -378,10 +384,10 @@ function buildDeck(pool, seed){
 }
 const codeOf = () => S.seed ? String(S.seed) + (S.pool==='all' ? '' : '-' + S.pool.toUpperCase()) : '';
 function parseCode(s){ const m = String(s).trim().toUpperCase().match(/^(\d{3,6})(?:-([A-Z]+))?$/); if(!m) return null; const pool = m[2] ? m[2].toLowerCase() : 'all'; if(pool!=='all' && !DATA.teams[pool]) return null; return {seed:+m[1], pool}; }
-function loadCode(code){ const c = parseCode(code); if(!c) return false; S.pool=c.pool; S.seed=c.seed; S.deck=buildDeck(c.pool,c.seed); S.idx=0; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock(); store(); render(); return true; }
+function loadCode(code){ const c = parseCode(code); if(!c) return false; S.pool=c.pool; S.seed=c.seed; S.deck=buildDeck(c.pool,c.seed); S.idx=0; while(S.idx<S.deck.length && (S.skip||[]).includes(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock(); store(); render(); return true; }
 function newGame(){
   S.seed = 1000 + Math.floor(Math.random()*9000);
-  S.deck = buildDeck(S.pool, S.seed); S.idx=0; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock();
+  S.deck = buildDeck(S.pool, S.seed); S.idx=0; while(S.idx<S.deck.length && (S.skip||[]).includes(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock();
   store(); render();
 }
 const cur = () => byName[S.deck[S.idx]];
@@ -543,22 +549,29 @@ function renderHost(){
   }
   $('hNext').disabled = !p || S.revealed || S.shown >= (p?totalClues(p):0);
   $('hUnmask').disabled = !p || S.revealed; $('hSkip').disabled = !p;
-  $('hUp').innerHTML = S.deck.slice(S.idx+1, S.idx+6).map(n=>`<li>${esc(n)}</li>`).join('') || '<li>End of deck</li>';
-  $('hKey').innerHTML = S.deck.map((n,i)=>`<tr data-i="${i}" class="${i===S.idx?'cur':''} ${i<S.idx?'dn':''}"><td>${i+1}</td><td>${esc(n)}</td><td>${esc(DATA.teams[byName[n].t].replace(/ \(.*\)/,''))}</td></tr>`).join('');
+  $('hUp').innerHTML = S.deck.slice(S.idx+1).filter(n=>!isSkipped(n)).slice(0,5).map(n=>`<li>${esc(n)}</li>`).join('') || '<li>End of deck</li>';
+  $('hPass').disabled = !p;
+  $('hKey').innerHTML = S.deck.map((n,i)=>`<tr data-i="${i}" class="${i===S.idx?'cur':''} ${i<S.idx&&!isSkipped(n)?'dn':''} ${isSkipped(n)?'sk':''}"><td>${i+1}</td><td>${esc(n)}</td><td>${esc(DATA.teams[byName[n].t].replace(/ \(.*\)/,''))}</td><td class="skc"><button type="button" class="skb" data-skip="${esc(n)}" title="${isSkipped(n)?'Put back in the game':'Leave out of this game'}">${isSkipped(n)?'Skipped':'Skip'}</button></td></tr>`).join('');
   const r = $('hKey').querySelector('.cur'); if(r) r.scrollIntoView({block:'nearest'});
 }
 
 /* ---------- actions ---------- */
 function reveal(){ const p=cur(); if(!p||S.revealed) return; if(S.shown < totalClues(p)) { S.shown++; if(S.shown===1 && S.tlen && !running() && S.tLeft==null) startTimer(); if(S.glen && !gRunning() && S.gLeft==null && !S.gOver) startGameClock(); store(); render(); } }
 function unmask(){ const p=cur(); if(!p||S.revealed) return; S.revealed=true; pauseTimer(); if(!S.done.includes(p.n)) S.done.push(p.n); store(); render(); }
-function next(){ if(!cur()) return; const p=cur(); if(!S.done.includes(p.n)) S.done.push(p.n); S.idx++; S.shown=0; S.revealed=false; S.down=[]; resetTimer(); store(); render(); }
+const isSkipped = n => (S.skip||[]).includes(n);
+function advance(){ S.idx++; while(S.idx < S.deck.length && isSkipped(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; resetTimer(); }
+function next(){ if(!cur()) return; const p=cur(); if(!S.done.includes(p.n)) S.done.push(p.n); advance(); store(); render(); }
+function passCurrent(){ const p=cur(); if(!p) return; S.skip=(S.skip||[]).concat(isSkipped(p.n)?[]:[p.n]); advance(); store(); render(); passNote(); }
+function toggleSkip(n){ const was=isSkipped(n); S.skip = was ? S.skip.filter(x=>x!==n) : (S.skip||[]).concat(n); if(!was && S.deck[S.idx]===n){ advance(); } store(); render(); passNote(); }
+function passNote(){ const el=$('hPassNote'); el.hidden = linked; el.textContent = linked ? '' : 'Skipped here. This window isn\'t linked to the game, so press → on the shared screen until the suspect number matches.'; }
 
 $('next').onclick=reveal; $('unmask').onclick=unmask; $('skip').onclick=next; $('tbtn').onclick=toggleTimer;
 $('hNext').onclick=reveal; $('hUnmask').onclick=unmask; $('hSkip').onclick=next; $('hT').onclick=toggleTimer;
 $('shuffle').onclick=newGame;
 function goTo(i){ if(!S.deck.length) return; S.idx=Math.max(0,Math.min(S.deck.length,i)); S.shown=0; S.revealed=false; S.down=[]; resetTimer(); store(); render(); }
 $('hPrev').onclick=()=>goTo(S.idx-1); $('hFwd').onclick=()=>goTo(S.idx+1);
-$('hKey').addEventListener('click',e=>{ const r=e.target.closest('tr'); if(r) goTo(+r.dataset.i); });
+$('hKey').addEventListener('click',e=>{ const sb=e.target.closest('[data-skip]'); if(sb){ e.stopPropagation(); toggleSkip(sb.dataset.skip); return; } const r=e.target.closest('tr'); if(r) goTo(+r.dataset.i); });
+$('hPass').onclick=passCurrent;
 $('hCodeForm').addEventListener('submit',e=>{ e.preventDefault(); if(!loadCode($('hCode').value)){ $('hCode').setCustomValidity('Use the code from the game screen, like 4821 or 4821-CORE'); $('hCode').reportValidity(); } else $('hCode').setCustomValidity(''); });
 $('hCode').addEventListener('input',()=>$('hCode').setCustomValidity(''));
 $('pool').onchange=e=>{ S.pool=e.target.value; newGame(); };
@@ -594,7 +607,7 @@ window.addEventListener('hashchange', ()=>{ if(!IS_HOST() && !S.deck.length) new
 
 function start(snap){
   const saved = (snap && snap.S) || load();
-  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(S.tlen==null) S.tlen=45; if(S.glen==null) S.glen=0; render(); }
+  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(S.tlen==null) S.tlen=45; if(S.glen==null) S.glen=0; if(!Array.isArray(S.skip)) S.skip=[]; render(); }
   else if(IS_HOST()) render();
   else newGame();
   if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){}

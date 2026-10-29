@@ -19,7 +19,7 @@ Ask with multiple-choice questions (one round), before searching anything heavy.
 - **Photos**: offer Slack profile photos as optional. They need a one-time Chrome setting on the host's Mac (see `references/photos.md`); otherwise the board uses colored initials.
 - **Team names**: ask whether there's an official page listing pod or team names (Confluence, a doc). If yes, read it and use those names; otherwise group by manager ("Team NAME").
 
-Leave the host out of the deck, since they're running the game. Tell them up front that the game will contain coworkers' names, photos and quotes, so it should stay private (private artifact, private repo). For very large orgs (over about 100 people), suggest a smaller pool: the game plays better and it exposes less.
+Ask whether to include the host. If they're in, they can skip their own card from the host view (or any other card: someone who's absent, a clue that feels off) without changing the data. Tell them up front that the game will contain coworkers' names, photos and quotes, so it should stay private (private artifact, private repo). For very large orgs (over about 100 people), suggest a smaller pool: the game plays better and it exposes less.
 
 Suggest the host give the pool a heads-up before game day ("I'm making a Guess Who from our Slack intros, tell me if you'd rather sit out"). Anyone who opts out is removed from the data entirely, not kept as a decoy.
 
@@ -66,7 +66,7 @@ Check once in a browser (Playwright is fine): the page loads without console err
 
 Tell the host, briefly:
 
-- How to run it: share the game window; open **Host view** in a second window off-screen. In the same browser it links automatically; anywhere else, type the game code from the top of the game screen and use the arrows to match the suspect number.
+- How to run it: share the game window; open **Host view** in a second window off-screen. **Skip this person** and the Skip toggles in the answer key take people out of the current game (skips carry over to new games until toggled back). In the same browser it links automatically; anywhere else, type the game code from the top of the game screen and use the arrows to match the suspect number.
 - Counts: how many playable people, how many decoys and why, and any judgment calls they should glance at (facts from someone else's post, uncertain wording).
 - Ask them to skim the clues once before game day, since these are their coworkers.
 
