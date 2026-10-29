@@ -1,0 +1,300 @@
+{
+ "meta": {
+  "title": "Guess Who Demo",
+  "eyebrow": "Sample data · replace with your team",
+  "everyone": "Everyone",
+  "slug": "demo",
+  "sources": "Sample data. In a real game every clue links to the Slack post it came from."
+ },
+ "teams": {
+  "blue": "Blue Team",
+  "green": "Green Team",
+  "gold": "Gold Team"
+ },
+ "people": [
+  {
+   "n": "Avery Example",
+   "t": "blue",
+   "ti": "Team Lead",
+   "c": [
+    "Drinks tea, never coffee.",
+    "Has a cat named Pixel.",
+    "Once won a pie-eating contest at a county fair."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Blake Sample",
+   "t": "blue",
+   "ti": "Analyst",
+   "c": [
+    "Based in Denver.",
+    "Plays bass in a weekend cover band.",
+    "Has visited every national park in Utah."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Casey Placeholder",
+   "t": "blue",
+   "ti": "Analyst",
+   "c": [
+    "Loves crossword puzzles.",
+    "Bakes sourdough every Sunday.",
+    "Grew up on a sailboat."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Devon Demo",
+   "t": "blue",
+   "ti": "Analyst",
+   "c": [],
+   "cs": []
+  },
+  {
+   "n": "Emery Mock",
+   "t": "green",
+   "ti": "Manager",
+   "c": [
+    "Runs half marathons.",
+    "Collects vintage board games.",
+    "Can solve a Rubik's cube in under a minute."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Finley Test",
+   "t": "green",
+   "ti": "Analyst",
+   "c": [
+    "Based in Austin.",
+    "Has two dogs named Taco and Queso.",
+    "Was an extra in a superhero movie."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Gray Fixture",
+   "t": "green",
+   "ti": "Analyst",
+   "c": [
+    "Into rock climbing.",
+    "Speaks three languages.",
+    "Keeps bees in the backyard."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Harper Stub",
+   "t": "green",
+   "ti": "Engineer",
+   "c": [],
+   "cs": []
+  },
+  {
+   "n": "Indigo Draft",
+   "t": "gold",
+   "ti": "Manager",
+   "c": [
+    "Favorite snack: sour gummy worms.",
+    "Paints miniature figurines.",
+    "Hiked to Everest Base Camp."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Jordan Sketch",
+   "t": "gold",
+   "ti": "Analyst",
+   "c": [
+    "Based in Chicago.",
+    "Plays competitive pickleball.",
+    "Has a pet tortoise older than the team."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Kai Prototype",
+   "t": "gold",
+   "ti": "Analyst",
+   "c": [
+    "Loves karaoke.",
+    "Restoring a 1970s motorcycle.",
+    "Used to be a professional juggler."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  },
+  {
+   "n": "Logan Outline",
+   "t": "gold",
+   "ti": "Analyst",
+   "c": [
+    "Watches every Studio Ghibli movie each fall.",
+    "Grows hot peppers.",
+    "Once met an astronaut on a flight."
+   ],
+   "cs": [
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    },
+    {
+     "s": "#example-channel 2026-01-01",
+     "u": "",
+     "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ]
+  }
+ ]
+}

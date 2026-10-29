@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Guess Who Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a two-panel "attribution desk" — case file with redacted indicators on the left, the flip-down suspect board on the right. */
+:root{
+  --bg:#E6EAF2; --panel:#FFFFFF; --ink:#141C33; --muted:#56617D; --line:#CBD2E1;
+  --board:#1D3480; --board-ink:#E9EEFB; --tile:#F6F8FC; --tile-ink:#141C33;
+  --redact:#141826; --accent:#D3263C; --accent-ink:#FFFFFF; --gold:#E9A800; --gold-ink:#2A1E00;
+  --t0:#1F5FD1; --t1:#0E8A7A; --t2:#7C3AED; --t3:#C2410C; --t4:#BE185D; --t5:#A16207; --t6:#0F766E; --t7:#4D7C0F;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1220; --panel:#151E33; --ink:#E7ECF7; --muted:#97A3BE; --line:#2A3654;
+  --board:#14245C; --board-ink:#DCE4FA; --tile:#1C2742; --tile-ink:#E7ECF7;
+  --redact:#03050B; --accent:#FF4A5E; --accent-ink:#1A0005; --gold:#FFC531; --gold-ink:#2A1E00;
+  --t0:#5B8EF0; --t1:#2BB3A0; --t2:#A37CF7; --t3:#F07A3E; --t4:#EC5C9C; --t5:#D4A32A; --t6:#2BA99C; --t7:#8CC63F;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1220; --panel:#151E33; --ink:#E7ECF7; --muted:#97A3BE; --line:#2A3654;
+  --board:#14245C; --board-ink:#DCE4FA; --tile:#1C2742; --tile-ink:#E7ECF7;
+  --redact:#03050B; --accent:#FF4A5E; --accent-ink:#1A0005; --gold:#FFC531; --gold-ink:#2A1E00;
+  --t0:#5B8EF0; --t1:#2BB3A0; --t2:#A37CF7; --t3:#F07A3E; --t4:#EC5C9C; --t5:#D4A32A; --t6:#2BA99C; --t7:#8CC63F;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 28px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+
+/* Header */
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(34px,5vw,56px);line-height:.92;margin:0;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+h1 .q{color:var(--accent)}
+.hdr-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1.5px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 14px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--ink)}
+a.btn{text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.kbd{font-family:var(--f-mono);font-size:11px;padding:1px 5px;border-radius:4px;border:1px solid currentColor;opacity:.7}
+select{font:inherit;font-weight:700;font-size:15px;padding:9px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);max-width:100%;min-width:0;flex:1 1 220px}
+[hidden]{display:none!important}
+
+/* Main grid */
+main{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1000px){main{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+/* Case file */
+.case{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
+.case-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.case-id{font-family:var(--f-mono);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.worth{font-family:var(--f-mono);font-weight:700;font-size:13px;letter-spacing:.06em;background:var(--gold);color:var(--gold-ink);padding:5px 10px;border-radius:999px;font-variant-numeric:tabular-nums}
+.subject{display:flex;align-items:center;gap:14px;min-height:72px}
+.mug{width:72px;height:72px;border-radius:12px;flex:none;display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:40px;
+  background:repeating-linear-gradient(0deg,var(--line) 0 1px,transparent 1px 12px),var(--tile);color:var(--muted);border:1.5px solid var(--line)}
+.mug.on{color:#fff;background:var(--tc);border-color:var(--tc)}
+.who{min-width:0;display:flex;flex-direction:column;gap:2px}
+.who .nm{font-family:var(--f-display);font-weight:900;font-size:34px;line-height:1;text-transform:uppercase;letter-spacing:.01em;overflow-wrap:anywhere}
+.who .meta{color:var(--muted);font-size:14px}
+.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.clue{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start}
+.clue .lbl{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--muted);padding-top:5px;width:64px;text-transform:uppercase}
+.clue .txt{position:relative;font-size:clamp(17px,1.6vw,20px);line-height:1.35;min-height:1.4em;min-width:0}
+.clue .bar{position:absolute;inset:-2px -4px;background:var(--redact);border-radius:3px;transform-origin:right center;transition:transform .55s cubic-bezier(.7,0,.2,1)}
+.clue.open .bar{transform:scaleX(0)}
+.clue.team .txt{font-weight:700}
+.clue .txt .ph{visibility:hidden}
+.clue.open .txt .ph{visibility:visible}
+.stamp{position:absolute;right:16px;top:12px;font-family:var(--f-display);font-weight:900;font-size:28px;letter-spacing:.08em;color:var(--accent);border:4px solid var(--accent);border-radius:8px;padding:2px 12px;transform:rotate(-9deg) scale(1.6);opacity:0;pointer-events:none;transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .2s}
+.case.revealed .stamp{opacity:.9;transform:rotate(-6deg) scale(1)}
+.case.revealed .worth{visibility:hidden}
+.ctl{display:flex;flex-wrap:wrap;gap:8px}
+.sources{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;border-top:1px dashed var(--line);padding-top:10px}
+.sources a{color:var(--muted)}
+.csrc{display:block;margin-top:3px;font-family:var(--f-mono);font-size:12px;color:var(--muted);text-decoration:none;width:max-content;max-width:100%}
+.csrc:hover{color:var(--ink);text-decoration:underline}
+.hq{display:block;font-size:13px;font-style:italic;color:var(--muted);margin-top:2px}
+.hclues .csrc{margin-top:2px}
+.empty{color:var(--muted);font-size:15px}
+
+/* Scoreboard */
+.score{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.score h2,.board h2{font-family:var(--f-display);font-weight:900;font-size:24px;text-transform:uppercase;letter-spacing:.03em;margin:0}
+.add{display:flex;gap:8px}
+.add input{flex:1;min-width:0;font:inherit;padding:9px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.players{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pl{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:6px;align-items:center}
+.pl .pn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .pts{font-family:var(--f-mono);font-weight:700;font-size:18px;min-width:3ch;text-align:right;font-variant-numeric:tabular-nums}
+.sm{padding:4px 9px;font-size:13px;border-radius:6px;border:1.5px solid var(--line);background:transparent;font-weight:700}
+.sm.award{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.pl.lead .pn::after{content:" \2605";color:var(--gold)}
+.hint{font-size:13px;color:var(--muted)}
+
+/* Board */
+.board{background:var(--board);color:var(--board-ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.06)}
+.board-top{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center}
+.board-top .count{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;opacity:.85}
+.board .btn{background:transparent;color:var(--board-ink);border-color:rgba(255,255,255,.3)}
+.board .btn:hover{border-color:var(--board-ink)}
+.group{display:flex;flex-direction:column;gap:8px}
+.gname{font-family:var(--f-mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.gname i{width:10px;height:10px;border-radius:3px;background:var(--tc);display:inline-block}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;perspective:700px}
+.tile{position:relative;background:var(--tile);color:var(--tile-ink);border:0;border-radius:8px;padding:8px 8px 8px 8px;text-align:left;display:flex;align-items:center;gap:8px;min-height:48px;
+  transform-origin:bottom center;transition:transform .4s cubic-bezier(.5,0,.3,1),opacity .4s;border-bottom:4px solid var(--tc)}
+.tile .av{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;font-weight:700;background:var(--tc);color:#fff}
+.tile .tn{font-size:13px;font-weight:700;line-height:1.15;min-width:0;overflow-wrap:anywhere}
+.tile.down{transform:rotateX(72deg);opacity:.28}
+.tile.answer{outline:3px solid var(--gold);outline-offset:2px;transform:none;opacity:1}
+.tile.done{opacity:.55}
+.tile.done .av{background:transparent;color:var(--tc);border:2px solid var(--tc)}
+footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:520px){.who .nm{font-size:28px}.stamp{font-size:22px;top:10px}.hdr-ctl{width:100%}.clue .lbl{width:50px}.tiles{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}}
+
+/* Timer */
+.tchip{font-family:var(--f-mono);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;padding:3px 10px;border-radius:8px;border:1.5px solid var(--line);min-width:5ch;text-align:center}
+.tchip.low{border-color:var(--accent);color:var(--accent)}
+.tchip.out{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);animation:pulse .6s ease-in-out 3}
+.tbar{height:5px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:-6px}
+.tbar i{display:block;height:100%;background:var(--gold);width:100%;transform-origin:left;transition:transform .25s linear}
+.tbar.low i{background:var(--accent)}
+.case.timeup{animation:shake .45s ease-in-out}
+@keyframes pulse{50%{transform:scale(1.12)}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.case-right{display:flex;align-items:center;gap:8px}
+/* Photos */
+.tile .av.pic,.mug.pic,.mug.on.pic{background-color:var(--tc);background-image:var(--sprite);background-size:var(--sprite-size,1000% 1000%);background-repeat:no-repeat}
+.tile .av.pic{color:transparent;box-shadow:0 0 0 2px var(--tc)}
+.mug.on.pic{color:transparent}
+.tile.done .av.pic{filter:grayscale(1);border:0}
+/* Host view */
+.host{display:flex;flex-direction:column;gap:16px;max-width:1100px;margin:0 auto}
+.host-banner{background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 14px;font-weight:700;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.host-banner span{font-weight:400}
+.host-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.host-grid{grid-template-columns:minmax(0,1fr)}}
+.hcard{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.hcard h3{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
+.hnow{display:flex;gap:14px;align-items:center}
+.hnow .nm{font-family:var(--f-display);font-weight:900;font-size:clamp(32px,4vw,48px);line-height:1;text-transform:uppercase;overflow-wrap:anywhere}
+.hclues{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.hclues li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;color:var(--muted)}
+.hclues li.on{color:var(--ink)}
+.hclues li b{font-family:var(--f-mono);font-size:12px;padding-top:3px}
+.hclues li.on b{color:var(--gold)}
+.key{width:100%;border-collapse:collapse;font-size:14px}
+.key td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.key td:first-child{font-family:var(--f-mono);color:var(--muted);width:3.5ch;font-variant-numeric:tabular-nums}
+.key tr.cur td{background:color-mix(in srgb,var(--gold) 22%,transparent);font-weight:700}
+.key tr.dn td{color:var(--muted);text-decoration:line-through}
+.keywrap{max-height:60vh;overflow:auto}
+.upnext{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.hostlink{color:var(--muted);font-size:13px}
+.gcode{font-weight:700;color:var(--ink);letter-spacing:.08em}
+.hcode{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px}
+.hcode-g{display:flex;gap:8px;align-items:center}
+.hcode input{font:inherit;font-family:var(--f-mono);font-weight:700;width:9ch;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);text-transform:uppercase}
+.hnum{font-family:var(--f-mono);font-weight:700;font-size:18px;min-width:6ch;text-align:center;font-variant-numeric:tabular-nums}
+.sync{font-size:13px;padding:4px 10px;border-radius:999px;border:1.5px solid var(--line);color:var(--muted)}
+.sync.on{border-color:var(--t1);color:var(--t1);font-weight:700}
+.key tr{cursor:pointer}
+.hempty{color:var(--muted);font-size:16px}
+</style>
+
+<div class="wrap" id="game">
+  <header>
+    <div class="brand">
+      <span class="eyebrow"><span id="eyebrow"></span> · Game code <b id="gcode" class="gcode"></b></span>
+      <h1>Guess Who<span class="q">?</span></h1>
+    </div>
+    <div class="hdr-ctl">
+      <label class="eyebrow" for="pool">Deck</label>
+      <select id="pool"></select>
+      <label class="eyebrow" for="tlen">Timer</label>
+      <select id="tlen" style="flex:0 1 110px">
+        <option value="0">Off</option><option value="30">30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option><option value="90">90 sec</option>
+      </select>
+      <button class="btn" id="shuffle" type="button">New game</button>
+      <a class="btn" id="hostBtn" href="#host" target="_blank" rel="noopener">Host view ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="col">
+      <section class="case" id="case" aria-live="polite">
+        <div class="case-top">
+          <span class="case-id" id="caseId">Suspect 01 / 79</span>
+          <span class="case-right"><span class="worth" id="worth">Guess now: 3 pts</span><span class="tchip" id="tchip" hidden>0:45</span></span>
+        </div>
+        <div class="tbar" id="tbar" hidden><i id="tfill"></i></div>
+        <div class="subject">
+          <div class="mug" id="mug" aria-hidden="true">?</div>
+          <div class="who">
+            <span class="nm" id="nm">Unknown agent</span>
+            <span class="meta" id="meta">Reveal indicators one at a time. Guess early for more points.</span>
+          </div>
+        </div>
+        <ol class="clues" id="clues"></ol>
+        <div class="stamp" aria-hidden="true">ATTRIBUTED</div>
+        <div class="ctl">
+          <button class="btn primary" id="next" type="button">Reveal indicator <span class="kbd">Space</span></button>
+          <button class="btn gold" id="unmask" type="button">Unmask <span class="kbd">Enter</span></button>
+          <button class="btn" id="skip" type="button">Next suspect <span class="kbd">→</span></button>
+          <button class="btn" id="tbtn" type="button" hidden>Pause timer <span class="kbd">T</span></button>
+        </div>
+        <div class="sources" id="sources" hidden></div>
+      </section>
+
+      <section class="score">
+        <h2>Scoreboard</h2>
+        <form class="add" id="addForm">
+          <input id="pname" placeholder="Add a player or team" autocomplete="off" maxlength="40">
+          <button class="btn" type="submit">Add</button>
+        </form>
+        <ul class="players" id="players"></ul>
+        <p class="hint">Award gives the points currently on the case file. Use ± to adjust.</p>
+      </section>
+    </div>
+
+    <section class="board" aria-label="Suspect board">
+      <div class="board-top">
+        <h2>Suspect board</h2>
+        <span class="count" id="count"></span>
+        <div class="ctl">
+          <button class="btn" id="flipTeam" type="button" disabled>Flip down other teams</button>
+          <button class="btn" id="resetBoard" type="button">Stand everyone up</button>
+        </div>
+      </div>
+      <div id="groups" class="col"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Click a tile to flip someone down, Guess Who style.</span>
+    <span id="srcnote"></span>
+    <span>Host view: open it in a second window and keep it off the shared screen. It follows the game automatically in the same browser; anywhere else, type the game code.</span>
+  </footer>
+</div>
+
+<div class="host" id="host" hidden>
+  <div class="host-banner">Host view <span>Keep this window off the shared screen.</span></div>
+  <div class="hcode">
+    <form id="hCodeForm" class="hcode-g"><label class="eyebrow" for="hCode">Game code</label><input id="hCode" autocomplete="off" maxlength="20" placeholder="e.g. 4821"><button class="btn" type="submit">Load</button></form>
+    <div class="hcode-g"><span class="eyebrow">Suspect</span><button class="btn" id="hPrev" type="button" aria-label="Previous suspect">◀</button><span class="hnum" id="hNum">–</span><button class="btn" id="hFwd" type="button" aria-label="Next suspect">▶</button></div>
+    <span class="sync" id="hSync"></span>
+  </div>
+  <div class="host-grid">
+    <section class="hcard">
+      <h3 id="hId">Now playing</h3>
+      <div class="hnow">
+        <div class="mug on" id="hMug" aria-hidden="true"></div>
+        <div class="who"><span class="nm" id="hName"></span><span class="meta" id="hMeta"></span></div>
+      </div>
+      <ol class="hclues" id="hClues"></ol>
+      <div class="ctl">
+        <button class="btn primary" id="hNext" type="button">Reveal indicator</button>
+        <button class="btn gold" id="hUnmask" type="button">Unmask</button>
+        <button class="btn" id="hSkip" type="button">Next suspect</button>
+        <button class="btn" id="hT" type="button">Start timer</button>
+        <span class="tchip" id="hTchip" hidden></span>
+      </div>
+      <h3>Up next</h3>
+      <ol class="upnext" id="hUp"></ol>
+    </section>
+    <section class="hcard">
+      <h3>Answer key (deck order)</h3>
+      <div class="keywrap"><table class="key"><tbody id="hKey"></tbody></table></div>
+      <p class="hostlink">Type the game code from the shared screen to load the same deck. The suspect number on the shared screen matches the row number here. Click a row to jump to it.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+const DATA = {"meta": {"title": "Guess Who Demo", "eyebrow": "Sample data · replace with your team", "everyone": "Everyone", "slug": "demo", "sources": "Sample data. In a real game every clue links to the Slack post it came from."}, "teams": {"blue": "Blue Team", "green": "Green Team", "gold": "Gold Team"}, "people": [{"n": "Avery Example", "t": "blue", "ti": "Team Lead", "c": ["Drinks tea, never coffee.", "Has a cat named Pixel.", "Once won a pie-eating contest at a county fair."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Blake Sample", "t": "blue", "ti": "Analyst", "c": ["Based in Denver.", "Plays bass in a weekend cover band.", "Has visited every national park in Utah."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Casey Placeholder", "t": "blue", "ti": "Analyst", "c": ["Loves crossword puzzles.", "Bakes sourdough every Sunday.", "Grew up on a sailboat."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Devon Demo", "t": "blue", "ti": "Analyst", "c": [], "cs": []}, {"n": "Emery Mock", "t": "green", "ti": "Manager", "c": ["Runs half marathons.", "Collects vintage board games.", "Can solve a Rubik's cube in under a minute."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Finley Test", "t": "green", "ti": "Analyst", "c": ["Based in Austin.", "Has two dogs named Taco and Queso.", "Was an extra in a superhero movie."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Gray Fixture", "t": "green", "ti": "Analyst", "c": ["Into rock climbing.", "Speaks three languages.", "Keeps bees in the backyard."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Harper Stub", "t": "green", "ti": "Engineer", "c": [], "cs": []}, {"n": "Indigo Draft", "t": "gold", "ti": "Manager", "c": ["Favorite snack: sour gummy worms.", "Paints miniature figurines.", "Hiked to Everest Base Camp."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Jordan Sketch", "t": "gold", "ti": "Analyst", "c": ["Based in Chicago.", "Plays competitive pickleball.", "Has a pet tortoise older than the team."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Kai Prototype", "t": "gold", "ti": "Analyst", "c": ["Loves karaoke.", "Restoring a 1970s motorcycle.", "Used to be a professional juggler."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Logan Outline", "t": "gold", "ti": "Analyst", "c": ["Watches every Studio Ghibli movie each fall.", "Grows hot peppers.", "Once met an astronaut on a flight."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}], "cols": 10, "rows": 10};
+const TEAM_KEYS = Object.keys(DATA.teams);
+const $ = id => document.getElementById(id);
+const initials = n => n.replace(/\bJr\b/,'').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const META = Object.assign({eyebrow:'Team Icebreaker', everyone:'Everyone', slug:'game', sources:'Every clue came from a real Slack post. Unmask to see each clue\'s source link.'}, DATA.meta||{});
+const KEY = 'gw-' + META.slug;
+const tc = t => `var(--t${Math.max(0,TEAM_KEYS.indexOf(t)) % 8})`;
+$('eyebrow').textContent = META.eyebrow; $('srcnote').textContent = META.sources;
+const playable = DATA.people.filter(p => p.c.length);
+const byName = Object.fromEntries(DATA.people.map(p=>[p.n,p]));
+if(DATA.sprite){ document.documentElement.style.setProperty('--sprite', `url(${DATA.sprite})`); document.documentElement.style.setProperty('--sprite-size', `${DATA.cols*100}% ${DATA.rows*100}%`); }
+function picStyle(p){
+  if(!DATA.sprite || p.i==null) return '';
+  const C=DATA.cols, R=DATA.rows, c=p.i%C, r=Math.floor(p.i/C);
+  return `background-position:${C>1?c/(C-1)*100:0}% ${R>1?r/(R-1)*100:0}%;`;
+}
+const IS_HOST = () => location.hash === '#host';
+
+let S = {pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, rev:0};
+let linked = false;
+
+let bc=null; try{ bc = new BroadcastChannel(KEY); bc.onmessage = e => { if(e.data && e.data.ping){ if(!IS_HOST() && S.deck.length) store(); return; } if(e.data && e.data.rev > S.rev){ S = e.data; linked = true; render(); } }; }catch(e){}
+window.addEventListener('storage', e => { if(e.key===KEY){ const v = load(); if(v && v.rev > S.rev){ S = v; linked = true; render(); } } });
+function store(){ S.rev = Math.max(Date.now(), (S.rev||0) + 1); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} try{ bc && bc.postMessage(S); }catch(e){} }
+function load(){ try{ const v = JSON.parse(localStorage.getItem(KEY)||'null'); if(v && Array.isArray(v.deck)) return v; }catch(e){} return null; }
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function resetTimer(){ S.tEnd=null; S.tLeft=null; timeupFired=false; }
+function rng(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function buildDeck(pool, seed){
+  const names = (pool==='all' ? playable : playable.filter(p=>p.t===pool)).map(p=>p.n).sort();
+  const r = rng(seed); for(let i=names.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [names[i],names[j]]=[names[j],names[i]]; }
+  return names;
+}
+const codeOf = () => S.seed ? String(S.seed) + (S.pool==='all' ? '' : '-' + S.pool.toUpperCase()) : '';
+function parseCode(s){ const m = String(s).trim().toUpperCase().match(/^(\d{3,6})(?:-([A-Z]+))?$/); if(!m) return null; const pool = m[2] ? m[2].toLowerCase() : 'all'; if(pool!=='all' && !DATA.teams[pool]) return null; return {seed:+m[1], pool}; }
+function loadCode(code){ const c = parseCode(code); if(!c) return false; S.pool=c.pool; S.seed=c.seed; S.deck=buildDeck(c.pool,c.seed); S.idx=0; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); store(); render(); return true; }
+function newGame(){
+  S.seed = 1000 + Math.floor(Math.random()*9000);
+  S.deck = buildDeck(S.pool, S.seed); S.idx=0; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer();
+  store(); render();
+}
+const cur = () => byName[S.deck[S.idx]];
+const totalClues = p => p.c.length + 1;
+function worth(){ const p=cur(); if(!p || S.revealed) return 0; return Math.max(1, 4 - Math.max(1,S.shown)); }
+
+/* ---------- timer ---------- */
+let timeupFired=false;
+function timeLeft(){ if(!S.tlen) return null; if(S.tEnd) return Math.max(0,(S.tEnd-Date.now())/1000); if(S.tLeft!=null) return S.tLeft; return S.tlen; }
+const running = () => !!S.tEnd;
+function startTimer(){ if(!S.tlen||S.revealed||!cur()) return; const left = S.tLeft!=null ? S.tLeft : S.tlen; if(left<=0) return; S.tEnd = Date.now()+left*1000; S.tLeft=null; }
+function pauseTimer(){ if(!S.tEnd) return; S.tLeft = Math.max(0,(S.tEnd-Date.now())/1000); S.tEnd=null; }
+function toggleTimer(){ running() ? pauseTimer() : startTimer(); store(); render(); }
+const fmt = s => { s=Math.ceil(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+let actx=null;
+function buzz(){ try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.type='square'; o.frequency.value=196; g.gain.setValueAtTime(.0001,actx.currentTime); g.gain.exponentialRampToValueAtTime(.18,actx.currentTime+.02); g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+.7); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime+.75);}catch(e){} }
+function paintTimer(){
+  const on = S.tlen>0 && !!cur() && !S.revealed;
+  const left = timeLeft();
+  [['tchip'],['hTchip']].forEach(([id])=>{ const el=$(id); el.hidden=!on; if(!on) return;
+    el.textContent = left<=0 ? "TIME!" : fmt(left);
+    el.classList.toggle('low', left>0 && left<=10); el.classList.toggle('out', left<=0); });
+  $('tbar').hidden=!on; $('tbtn').hidden=!on;
+  if(on){ $('tfill').style.transform=`scaleX(${Math.max(0,left/S.tlen)})`; $('tbar').classList.toggle('low',left<=10);
+    $('tbtn').innerHTML = (running()?'Pause timer':(left<S.tlen&&left>0?'Resume timer':'Start timer'))+' <span class="kbd">T</span>'; }
+  $('hT').hidden = !on; $('hT').textContent = running()?'Pause timer':(left<S.tlen&&left>0?'Resume timer':'Start timer');
+  if(on && running() && left<=0 && !timeupFired){
+    timeupFired=true; S.tEnd=null; S.tLeft=0;
+    const c=$('case'); c.classList.remove('timeup'); void c.offsetWidth; c.classList.add('timeup');
+    if(!IS_HOST()) buzz();
+    store();
+  }
+}
+setInterval(paintTimer, 200);
+
+/* ---------- render ---------- */
+function srcLink(s){ const lbl = '↗ ' + esc(s.s.replace(/ (\d{4}-\d{2}(-\d{2})?)$/,' · $1')); return s.u ? `<a class="csrc" href="${esc(s.u)}" target="_blank" rel="noopener">${lbl}</a>` : `<span class="csrc">${lbl.slice(2)}</span>`; }
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function render(){
+  $('game').hidden = IS_HOST(); $('host').hidden = !IS_HOST();
+  $('tlen').value = String(S.tlen||0);
+  $('gcode').textContent = codeOf() || '—';
+  if(IS_HOST()) renderHost(); else renderGame();
+  paintTimer();
+}
+function renderGame(){
+  const p = cur();
+  $('pool').innerHTML = `<option value="all">${esc(META.everyone)} (${playable.length})</option>` +
+    TEAM_KEYS.map(k=>{const n=playable.filter(p=>p.t===k).length; return `<option value="${k}">${esc(DATA.teams[k])} (${n})</option>`}).join('');
+  $('pool').value = S.pool;
+  const caseEl = $('case');
+  if(!p){
+    $('caseId').textContent='Deck complete'; $('worth').textContent='Game over';
+    $('nm').textContent='All suspects attributed'; $('meta').textContent='Start a new game to reshuffle.';
+    $('clues').innerHTML=''; $('mug').className='mug'; $('mug').style.cssText=''; $('mug').textContent='✓';
+    ['next','unmask','skip'].forEach(id=>$(id).disabled=true); caseEl.classList.remove('revealed'); $('sources').hidden=true;
+  } else {
+    ['next','unmask','skip'].forEach(id=>$(id).disabled=false);
+    $('caseId').textContent = `Suspect ${String(S.idx+1).padStart(2,'0')} / ${S.deck.length}`;
+    const w = worth();
+    $('worth').textContent = S.revealed ? 'Unmasked' : (S.shown===0 ? 'Reveal the first indicator' : `Guess now: ${w} pt${w>1?'s':''}`);
+    const items = p.c.map((c,i)=>({lbl:`IOC ${i+1}`, txt:c, team:false, src:p.cs[i]}));
+    items.push({lbl:'Team', txt:DATA.teams[p.t], team:true});
+    $('clues').innerHTML = items.map((it,i)=>{
+      const open = S.revealed || i < S.shown;
+      return `<li class="clue ${open?'open':''} ${it.team?'team':''}"><span class="lbl">${it.lbl}</span><span class="txt"><span class="ph">${esc(it.txt)}</span>${S.revealed&&it.src?srcLink(it.src):''}<span class="bar" aria-hidden="true"></span></span></li>`;
+    }).join('');
+    $('next').disabled = S.revealed || S.shown >= items.length;
+    $('unmask').disabled = S.revealed;
+    $('skip').innerHTML = (S.idx >= S.deck.length-1 ? 'Finish game' : 'Next suspect') + ' <span class="kbd">→</span>';
+    caseEl.classList.toggle('revealed', S.revealed);
+    const mug=$('mug');
+    if(S.revealed){
+      const hasPic = DATA.sprite && p.i!=null;
+      mug.className='mug on'+(hasPic?' pic':''); mug.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; mug.textContent=initials(p.n);
+      $('nm').textContent=p.n; $('meta').textContent=`${p.ti} · ${DATA.teams[p.t]}`;
+      $('sources').hidden=false;
+      $('sources').innerHTML = '<span>Each clue links to the Slack post it came from.</span>';
+    } else {
+      mug.className='mug'; mug.style.cssText=''; mug.textContent='?'; $('nm').textContent='Unknown agent';
+      $('meta').textContent = S.shown===0 ? 'Reveal indicators one at a time. Guess early for more points.' : 'Shout your guess, or flip suspects down on the board.';
+      $('sources').hidden=true;
+    }
+    $('flipTeam').disabled = !(S.revealed || S.shown >= items.length);
+  }
+  renderBoard(); renderPlayers();
+}
+function renderBoard(){
+  const p = cur();
+  $('groups').innerHTML = TEAM_KEYS.map(k=>{
+    const ppl = DATA.people.filter(x=>x.t===k).sort((a,b)=>a.n.localeCompare(b.n));
+    return `<div class="group"><div class="gname"><i style="--tc:${tc(k)}"></i>${esc(DATA.teams[k])}</div><div class="tiles">` +
+      ppl.map(x=>{
+        const cls = ['tile'];
+        if(S.down.includes(x.n)) cls.push('down');
+        if(S.done.includes(x.n)) cls.push('done');
+        if(S.revealed && p && p.n===x.n) cls.push('answer');
+        const pic = DATA.sprite && x.i!=null;
+        return `<button type="button" class="${cls.join(' ')}" style="--tc:${tc(k)}" data-n="${esc(x.n)}" aria-pressed="${S.down.includes(x.n)}"><span class="av${pic?' pic':''}" style="${picStyle(x)}">${initials(x.n)}</span><span class="tn">${esc(x.n)}</span></button>`;
+      }).join('') + `</div></div>`;
+  }).join('');
+  $('count').textContent = `${DATA.people.length - S.down.length} of ${DATA.people.length} standing`;
+}
+function renderPlayers(){
+  const max = Math.max(0,...S.players.map(p=>p.s));
+  const w = worth();
+  $('players').innerHTML = S.players.map((pl,i)=>`<li class="pl ${pl.s>0&&pl.s===max?'lead':''}"><span class="pn">${esc(pl.n)}</span><span class="pts">${pl.s}</span>
+    <button type="button" class="sm award" data-a="award" data-i="${i}" ${w?'':'disabled'} title="Award current points">+${w||0}</button>
+    <button type="button" class="sm" data-a="minus" data-i="${i}" aria-label="Subtract a point from ${esc(pl.n)}">−</button>
+    <button type="button" class="sm" data-a="plus" data-i="${i}" aria-label="Add a point to ${esc(pl.n)}">+</button></li>`).join('');
+}
+function renderHost(){
+  const p = cur();
+  $('hNum').textContent = S.deck.length ? `${Math.min(S.idx+1,S.deck.length)} / ${S.deck.length}` : '–';
+  if(document.activeElement !== $('hCode')) $('hCode').value = codeOf();
+  $('hSync').className = 'sync' + (linked ? ' on' : '');
+  $('hSync').textContent = linked ? 'Linked to the game window: it follows along' : 'Not linked: load the game code, then use ◀ ▶ to match the suspect number on screen';
+  $('hPrev').disabled = !S.deck.length || S.idx<=0; $('hFwd').disabled = !S.deck.length || S.idx>=S.deck.length;
+  if(!S.deck.length){ $('hId').textContent='No game loaded'; $('hName').textContent=''; $('hMeta').innerHTML='<span class="hempty">Type the game code shown at the top of the game screen, then press Load.</span>'; $('hClues').innerHTML=''; $('hMug').style.cssText=''; $('hMug').textContent='?'; $('hUp').innerHTML=''; $('hKey').innerHTML=''; ['hNext','hUnmask','hSkip'].forEach(id=>$(id).disabled=true); return; }
+  if(!p){ $('hId').textContent='Deck complete'; $('hName').textContent='Game over'; $('hMeta').textContent=''; $('hClues').innerHTML=''; $('hMug').style.cssText=''; $('hMug').textContent='✓'; }
+  else {
+    $('hId').textContent = `Now playing · Suspect ${S.idx+1} of ${S.deck.length}` + (S.revealed?' · unmasked':` · worth ${worth()||'—'} pts`);
+    $('hName').textContent = p.n; $('hMeta').textContent = `${p.ti} · ${DATA.teams[p.t]}`;
+    const hasPic = DATA.sprite && p.i!=null; const m=$('hMug');
+    m.className='mug on'+(hasPic?' pic':''); m.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; m.textContent=initials(p.n);
+    const items = p.c.concat([`Team: ${DATA.teams[p.t]}`]);
+    $('hClues').innerHTML = items.map((c,i)=>{ const s=p.cs[i]; return `<li class="${(S.revealed||i<S.shown)?'on':''}"><b>${(S.revealed||i<S.shown)?'✓':i+1}</b><span>${esc(c)}${s?`<span class="hq">“${esc(s.q)}”</span>${srcLink(s)}`:''}</span></li>`; }).join('');
+  }
+  $('hNext').disabled = !p || S.revealed || S.shown >= (p?totalClues(p):0);
+  $('hUnmask').disabled = !p || S.revealed; $('hSkip').disabled = !p;
+  $('hUp').innerHTML = S.deck.slice(S.idx+1, S.idx+6).map(n=>`<li>${esc(n)}</li>`).join('') || '<li>End of deck</li>';
+  $('hKey').innerHTML = S.deck.map((n,i)=>`<tr data-i="${i}" class="${i===S.idx?'cur':''} ${i<S.idx?'dn':''}"><td>${i+1}</td><td>${esc(n)}</td><td>${esc(DATA.teams[byName[n].t].replace(/ \(.*\)/,''))}</td></tr>`).join('');
+  const r = $('hKey').querySelector('.cur'); if(r) r.scrollIntoView({block:'nearest'});
+}
+
+/* ---------- actions ---------- */
+function reveal(){ const p=cur(); if(!p||S.revealed) return; if(S.shown < totalClues(p)) { S.shown++; if(S.shown===1 && S.tlen && !running() && S.tLeft==null) startTimer(); store(); render(); } }
+function unmask(){ const p=cur(); if(!p||S.revealed) return; S.revealed=true; pauseTimer(); if(!S.done.includes(p.n)) S.done.push(p.n); store(); render(); }
+function next(){ if(!cur()) return; const p=cur(); if(!S.done.includes(p.n)) S.done.push(p.n); S.idx++; S.shown=0; S.revealed=false; S.down=[]; resetTimer(); store(); render(); }
+
+$('next').onclick=reveal; $('unmask').onclick=unmask; $('skip').onclick=next; $('tbtn').onclick=toggleTimer;
+$('hNext').onclick=reveal; $('hUnmask').onclick=unmask; $('hSkip').onclick=next; $('hT').onclick=toggleTimer;
+$('shuffle').onclick=newGame;
+function goTo(i){ if(!S.deck.length) return; S.idx=Math.max(0,Math.min(S.deck.length,i)); S.shown=0; S.revealed=false; S.down=[]; resetTimer(); store(); render(); }
+$('hPrev').onclick=()=>goTo(S.idx-1); $('hFwd').onclick=()=>goTo(S.idx+1);
+$('hKey').addEventListener('click',e=>{ const r=e.target.closest('tr'); if(r) goTo(+r.dataset.i); });
+$('hCodeForm').addEventListener('submit',e=>{ e.preventDefault(); if(!loadCode($('hCode').value)){ $('hCode').setCustomValidity('Use the code from the game screen, like 4821 or 4821-CORE'); $('hCode').reportValidity(); } else $('hCode').setCustomValidity(''); });
+$('hCode').addEventListener('input',()=>$('hCode').setCustomValidity(''));
+$('pool').onchange=e=>{ S.pool=e.target.value; newGame(); };
+$('tlen').onchange=e=>{ S.tlen=+e.target.value; resetTimer(); store(); render(); };
+$('resetBoard').onclick=()=>{ S.down=[]; store(); renderBoard(); };
+$('flipTeam').onclick=()=>{ const p=cur(); if(!p) return; S.down = DATA.people.filter(x=>x.t!==p.t).map(x=>x.n).concat(S.down.filter(n=>byName[n].t===p.t)); store(); renderBoard(); };
+$('groups').addEventListener('click',e=>{
+  const b=e.target.closest('.tile'); if(!b) return; const n=b.dataset.n;
+  S.down = S.down.includes(n) ? S.down.filter(x=>x!==n) : S.down.concat(n);
+  b.classList.toggle('down'); b.setAttribute('aria-pressed', S.down.includes(n));
+  $('count').textContent = `${DATA.people.length - S.down.length} of ${DATA.people.length} standing`; store();
+});
+$('addForm').addEventListener('submit',e=>{ e.preventDefault(); const v=$('pname').value.trim(); if(!v) return; S.players.push({n:v,s:0}); $('pname').value=''; store(); renderPlayers(); });
+$('players').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; const pl=S.players[+b.dataset.i]; if(!pl) return;
+  if(b.dataset.a==='award'){ pl.s+=worth(); unmask(); return; }
+  if(b.dataset.a==='plus') pl.s++; if(b.dataset.a==='minus') pl.s--;
+  store(); renderPlayers();
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,select,textarea')) return;
+  if(e.key===' '){ e.preventDefault(); reveal(); }
+  else if(e.key==='Enter' && !e.target.closest('button,a')){ e.preventDefault(); unmask(); }
+  else if(e.key==='ArrowRight'){ next(); }
+  else if(e.key==='t'||e.key==='T'){ toggleTimer(); }
+});
+window.addEventListener('hashchange', ()=>{ if(!IS_HOST() && !S.deck.length) newGame(); else render(); if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){} });
+
+function start(snap){
+  const saved = (snap && snap.S) || load();
+  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(S.tlen==null) S.tlen=45; render(); }
+  else if(IS_HOST()) render();
+  else newGame();
+  if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){}
+}
+window.claude?.hot?.snapshot?.(() => ({S}));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+
+</body>
+</html>
