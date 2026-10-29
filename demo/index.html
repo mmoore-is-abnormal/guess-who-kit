@@ -192,6 +192,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 .upnext{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
 .hostlink{color:var(--muted);font-size:13px}
 .intel{grid-column:1 / -1}
+.skipped summary{cursor:pointer;margin:4px 0 8px}
 .intel-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .intel-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .intel-list li{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:start}
@@ -381,6 +382,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
       <div class="intel-top"><h3>New intel</h3><button class="btn" id="intelRun" type="button">Check Slack now</button></div>
       <p class="hostlink" id="intelStatus"></p>
       <ul class="intel-list" id="intelList"></ul>
+      <details class="skipped" id="skipBox" hidden><summary class="hostlink" id="skipSum">Posts the scout skipped</summary><ul class="intel-list" id="skipList"></ul></details>
       <p class="hostlink">Each time you open this host view, the scout looks for new posts from people on the board (at most every few hours), drafts clues with Claude, and skips anything already used. Nothing joins the deck until you approve it here.</p>
     </section>
     <section class="hcard addcard" id="addCard">
@@ -940,13 +942,23 @@ function start(snap){
   const usedUrls = new Set(DATA.people.flatMap(p=>(p.cs||[]).map(c=>normUrl(c.u))).filter(Boolean));
   const bySid = Object.fromEntries(DATA.people.filter(p=>p.sid).map(p=>[p.sid,p.n]));
   const SERVER = SC.server || 'Slack', TOOL = 'slack_search_public_and_private';
-  let db=null, editor=false, cards=[], running=false, leased=false;
+  let db=null, editor=false, cards=[], running=false, leased=false, SKIPS=[];
   const TAB = 't' + Math.random().toString(36).slice(2);
   const MAXC = 5;
 
   function applyCards(){ SCOUT_CARDS = cards; applyExtras(); }
   function status(msg){ $('intelStatus').textContent = msg; }
+  function renderSkips(){
+    const box=$('skipBox'); box.hidden = !editor || !SKIPS.length; if(box.hidden) return;
+    $('skipSum').textContent = `Posts the scout skipped (${SKIPS.length}): turn one into a card yourself`;
+    $('skipList').innerHTML = SKIPS.map((k,i)=>`<li><div><span class="who2">${esc(k.name||'')}</span><span class="lvl">${esc(k.time||'')}</span><div class="hq">“${esc(k.text)}”</div>${k.url?`<a class="csrc" href="${esc(k.url)}" target="_blank" rel="noopener">↗ Slack</a>`:''}</div><div class="acts"><button class="sm award" data-use="${i}" type="button">Make a card</button></div></li>`).join('');
+  }
+  $('skipList').addEventListener('click', e=>{ const b=e.target.closest('[data-use]'); if(!b) return; const k=SKIPS[+b.dataset.use]; if(!k) return;
+    if(byName[k.name]) $('acWho').value = k.name; document.querySelectorAll('.acnew').forEach(el=>el.hidden = $('acWho').value!=='__new');
+    $('acC1').value = ''; $('acC1').placeholder = 'Rewrite as a clue, e.g. ' + k.text.slice(0,60); $('acU1').value = k.url || '';
+    $('acMsg').textContent = 'Write the clue in third person (they/their), then add it.'; $('addCard').scrollIntoView({behavior:'smooth', block:'start'}); $('acC1').focus(); });
   function renderIntel(){
+    renderSkips();
     $('intel').hidden = !editor;
     const pend = cards.filter(c=>c.status==='pending');
     const note = $('intelNote');
@@ -979,7 +991,7 @@ function start(snap){
     if(!db || !editor || running) return;
     running=true; $('intelRun').disabled=true;
     try{
-      const st = await db.doc('scout/state').get(); const s = st.exists ? st.data() : {};
+      const st = await db.doc('scout/state').get(); const s = st.exists ? st.data() : {}; SKIPS = s.skipped || SKIPS; const usedNow = new Set();
       const every = (SC.everyHours||6)*3600e3;
       if(!manual && s.lastRun && Date.now()-s.lastRun < every){ status(`Last checked ${new Date(s.lastRun).toLocaleString()}. Next automatic check after ${new Date(s.lastRun+every).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.`); return; }
       const run = db.doc('scout/run');
@@ -1036,11 +1048,13 @@ Reply with only a JSON array (empty if nothing qualifies). Each item: {"mid": me
           if(others.some(x=>sim(x,clue)>=0.6)) continue;
           const id = hash(m.url);
           const card = {id, mid:id, name, clue, quote:String(it.quote).slice(0,160), level:Math.min(3,Math.max(1,+it.level||2)), url:m.url, src:`${m.channel} ${m.time||today}`, status:'pending', foundAt:Date.now()};
-          await db.doc('cards/'+id).set(card); cards.push(card); added++;
+          await db.doc('cards/'+id).set(card); cards.push(card); added++; usedNow.add(m.url);
         }
       }
       const seenArr = [...seen, ...fresh.map(m=>m.url)].slice(-3000);
-      await db.doc('scout/state').set({lastRun:Date.now(), lastScan:today, seen:seenArr});
+      const newSkips = fresh.filter(m=>!usedNow.has(m.url)).map(m=>({name:bySid[m.fromId], text:m.text.slice(0,300), url:m.url, time:m.time||today}));
+      SKIPS = newSkips.concat((s.skipped||[]).filter(x=>!newSkips.some(y=>y.url===x.url))).slice(0,25);
+      await db.doc('scout/state').set({lastRun:Date.now(), lastScan:today, seen:seenArr, skipped:SKIPS});
       status(fresh.length ? `Checked ${fresh.length} new post${fresh.length>1?'s':''}: ${added} new card${added===1?'':'s'} to review.` + (added<fresh.length ? ' Posts with no light, shareable fact (or one that repeats an existing clue) are skipped; add those by hand below if you like.' : '') : `No new posts from people on the board since the last check (${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}). Posts can take a minute to show up in Slack search.`);
     }catch(err){
       const code = err && err.code;
@@ -1051,6 +1065,7 @@ Reply with only a JSON array (empty if nothing qualifies). Each item: {"mid": me
   (async()=>{
     db = await C.use('db'); if(!db) return;
     const u = await C.use('user'); editor = u ? await u.canEdit() : false;
+    if(editor){ try{ const st = await db.doc('scout/state').get(); if(st.exists) SKIPS = st.data().skipped || []; }catch(e){} }
     db.collection('cards').onSnapshot(snap=>{
       cards = snap.docs.map(d=>({id:d.id, ...d.data()}));
       applyCards(); render(); renderIntel();
