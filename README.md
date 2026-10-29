@@ -40,6 +40,8 @@ Set these in the setup bar above the case file. Changing any of them starts a ne
 - **Clues**: *New mix each game* draws a different set and order of clues per person from everything we found (core clues plus extras), always vague to specific. *Same every game* uses the original clues.
 - **Fresh faces first**: people who haven't come up recently go to the front of the deck.
 - **Season**: *Save this game to the season* adds the scoreboard to season standings (each game code can only be saved once, so nothing double-counts). *Start a new season* archives the champion.
+- **Points**: turn scoring off ("Off, just for fun") to hide the scoreboard, point values and season panel.
+- **Add a card** (host view): add clues for anyone on the board, or a whole new person with a pod and title, with an optional Slack link. Clues that overlap an existing one are skipped. Added cards go straight into the game and show ADDED in the host view; remove them from the same list.
 - **Sound**: reveal swoosh, unmask stamp, point chime, tile clicks, countdown ticks and a final fanfare. Toggle with the Sound button or **M**. Sound plays only in the game window, so it's what the room hears when you share with computer audio.
 
 The game code carries the mode, difficulty and clue setting (for example `4821-S-H`), so a host view anywhere can load the same game.

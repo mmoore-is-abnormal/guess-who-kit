@@ -214,6 +214,16 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 .season-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .season .stand li{font-size:16px}
 .pl .sm[disabled]{opacity:.4}
+.addcard{grid-column:1 / -1}
+.acform{display:flex;flex-direction:column;gap:12px}
+.acgrid{display:flex;flex-wrap:wrap;gap:10px 14px}
+.acgrid .fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.acform select{flex:none}
+.acform input,.acform select,.acform textarea{font:inherit;font-size:14px;padding:7px 9px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);min-width:0;max-width:100%}
+.acrows{display:flex;flex-direction:column;gap:8px}
+.acrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,.6fr);gap:8px;align-items:center}
+@media (max-width:640px){.acrow{grid-template-columns:minmax(0,1fr)}}
+.addtag{font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;background:var(--t1);color:#fff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle}
 </style>
 
 <div class="wrap" id="game">
@@ -236,6 +246,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
     <label class="fld"><span class="eyebrow">Difficulty</span><select id="diff"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
     <label class="fld"><span class="eyebrow">Deck</span><select id="pool"></select></label>
     <label class="fld"><span class="eyebrow">Clues</span><select id="vary"><option value="1">New mix each game</option><option value="0">Same every game</option></select></label>
+    <label class="fld"><span class="eyebrow">Points</span><select id="scoring"><option value="1">On</option><option value="0">Off, just for fun</option></select></label>
     <label class="fld chk"><input type="checkbox" id="fresh"><span>Fresh faces first</span></label>
     <label class="fld"><span class="eyebrow">Game clock</span><select id="glen">
       <option value="0">Off</option><option value="300">5 min</option><option value="600">10 min</option><option value="900">15 min</option><option value="1200">20 min</option>
@@ -272,7 +283,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
         <div class="sources" id="sources" hidden></div>
       </section>
 
-      <section class="score">
+      <section class="score" id="scoreSec">
         <h2>Scoreboard</h2>
         <form class="add" id="addForm">
           <input id="pname" placeholder="Add a player or team" autocomplete="off" maxlength="40">
@@ -365,6 +376,21 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
       <ul class="intel-list" id="intelList"></ul>
       <p class="hostlink">Each time you open this host view, the scout looks for new posts from people on the board (at most every few hours), drafts clues with Claude, and skips anything already used. Nothing joins the deck until you approve it here.</p>
     </section>
+    <section class="hcard addcard" id="addCard">
+      <div class="intel-top"><h3>Add a card</h3></div>
+      <form id="acForm" class="acform" autocomplete="off">
+        <div class="acgrid">
+          <label class="fld"><span class="eyebrow">Who</span><select id="acWho"></select></label>
+          <label class="fld acnew" hidden><span class="eyebrow">Name</span><input id="acName" maxlength="60" placeholder="Full name"></label>
+          <label class="fld acnew" hidden><span class="eyebrow">Pod</span><select id="acTeam"></select></label>
+          <label class="fld acnew" hidden><span class="eyebrow">Title</span><input id="acTitle" maxlength="80" placeholder="Optional"></label>
+        </div>
+        <div class="acrows" id="acRows"></div>
+        <div class="ctl"><button class="btn primary" type="submit">Add to the deck</button><span class="hostlink" id="acMsg" role="status"></span></div>
+        <p class="hostlink">Use facts the person shared themselves and would be happy to see on the shared screen. Cards you add here go straight into the game, marked ADDED in this view.</p>
+      </form>
+      <ul class="intel-list" id="acList"></ul>
+    </section>
   </div>
 </div>
 
@@ -380,6 +406,18 @@ $('eyebrow').textContent = META.eyebrow; $('srcnote').textContent = META.sources
 const hasClues = p => (p.c||[]).length + (p.x||[]).length > 0;
 let playable = DATA.people.filter(hasClues);
 const byName = Object.fromEntries(DATA.people.map(p=>[p.n,p]));
+const BASE = {}; DATA.people.forEach(p=>{ BASE[p.n] = {c:p.c.slice(), cs:(p.cs||[]).slice()}; });
+let SCOUT_CARDS = [], MANUAL = [];
+try{ MANUAL = JSON.parse(localStorage.getItem('gw-'+((DATA.meta||{}).slug||'game')+'-manual')||'[]') || []; }catch(e){ MANUAL = []; }
+function applyExtras(){
+  for(let i=DATA.people.length-1;i>=0;i--) if(DATA.people[i].manual){ delete byName[DATA.people[i].n]; delete BASE[DATA.people[i].n]; DATA.people.splice(i,1); }
+  DATA.people.forEach(p=>{ const b=BASE[p.n]; if(b){ p.c=b.c.slice(); p.cs=b.cs.slice(); } });
+  MANUAL.filter(m=>m.kind==='person' && m.name && !byName[m.name] && DATA.teams[m.team]).forEach(m=>{ const p={n:m.name, t:m.team, ti:m.title||'', c:[], cs:[], x:[], manual:true}; DATA.people.push(p); byName[p.n]=p; BASE[p.n]={c:[],cs:[]}; });
+  const ins = (p, clue, level, src) => { if(!p || !clue || p.c.length>=8) return; if(p.c.some(x=>sim2(x,clue)>=0.6)) return; const at = level<=1 ? 0 : level===2 ? Math.ceil(p.c.length/2) : p.c.length; p.c.splice(at,0,clue); p.cs.splice(at,0,src); };
+  SCOUT_CARDS.filter(c=>c.status==='approved').sort((a,b)=>(a.foundAt||0)-(b.foundAt||0)).forEach(c=>ins(byName[c.name], c.clue, c.level, {s:c.src, u:c.url, q:c.quote, card:true}));
+  MANUAL.filter(m=>m.kind==='clue').sort((a,b)=>(a.at||0)-(b.at||0)).forEach(m=>ins(byName[m.name], m.clue, m.level, {s:'Added by host', u:m.link||'', q:'', manual:true}));
+  playable = DATA.people.filter(hasClues);
+}
 if(DATA.sprite){ document.documentElement.style.setProperty('--sprite', `url(${DATA.sprite})`); document.documentElement.style.setProperty('--sprite-size', `${DATA.cols*100}% ${DATA.rows*100}%`); }
 function picStyle(p){
   if(!DATA.sprite || p.i==null) return '';
@@ -388,11 +426,11 @@ function picStyle(p){
 }
 const IS_HOST = () => location.hash === '#host';
 
-let S = {mode:'classic', diff:'normal', vary:true, fresh:true, podPts:{}, saved:false, pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, glen:0, gEnd:null, gLeft:null, gOver:false, gDismiss:false, skip:[], rev:0};
+let S = {scoring:true, mode:'classic', diff:'normal', vary:true, fresh:true, podPts:{}, saved:false, pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, glen:0, gEnd:null, gLeft:null, gOver:false, gDismiss:false, skip:[], rev:0};
 let linked = false;
 
 let bc=null; try{ bc = new BroadcastChannel(KEY); bc.onmessage = e => { if(e.data && e.data.ping){ if(!IS_HOST() && S.deck.length) store(); return; } if(e.data && e.data.rev > S.rev){ S = e.data; linked = true; render(); } }; }catch(e){}
-window.addEventListener('storage', e => { if(e.key===KEY){ const v = load(); if(v && v.rev > S.rev){ S = v; linked = true; render(); } } });
+window.addEventListener('storage', e => { if(e.key===KEY+'-manual'){ try{ MANUAL = JSON.parse(e.newValue||'[]')||[]; }catch(x){} applyExtras(); render(); return; } if(e.key===KEY+'-season'){ try{ SEASON = JSON.parse(e.newValue)||SEASON; }catch(x){} renderSeason(); return; } if(e.key===KEY){ const v = load(); if(v && v.rev > S.rev){ S = v; linked = true; render(); } } });
 function store(){ S.rev = Math.max(Date.now(), (S.rev||0) + 1); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} try{ bc && bc.postMessage(S); }catch(e){} }
 function load(){ try{ const v = JSON.parse(localStorage.getItem(KEY)||'null'); if(v && Array.isArray(v.deck)) return v; }catch(e){} return null; }
 
@@ -409,6 +447,7 @@ function remote(path, data){ if(!SDB) return; chains[path] = (chains[path]||Prom
   db.doc('season/current').onSnapshot(s=>{ if(s.exists){ SEASON = s.data(); LSset('season', SEASON); renderSeason(); } }, ()=>{});
   db.doc('history/seen').onSnapshot(s=>{ if(s.exists){ HIST = s.data().seen || {}; LSset('hist', HIST); } }, ()=>{});
   db.collection('games').onSnapshot(sn=>{ sn.docs.forEach(d=>{ GAMES[d.id] = d.data(); }); LSset('games', GAMES); }, ()=>{});
+  db.collection('manual').onSnapshot(sn=>{ MANUAL = sn.docs.map(d=>({id:d.id, ...d.data()})); LSset('manual', MANUAL); applyExtras(); render(); }, ()=>{});
 })();
 function rememberGame(){
   const code = codeOf(); if(!code) return;
@@ -451,6 +490,57 @@ function renderSeason(){
   const done = S.saved || (SEASON.saved||[]).includes(codeOf());
   $('seasonSave').disabled = done || !S.deck.length; $('seasonSave').textContent = done ? 'Saved to the season ✓' : 'Save this game to the season';
   const os = $('overSave'); if(os){ os.disabled = done; os.textContent = done ? 'Saved to the season ✓' : 'Save to the season'; }
+}
+
+/* ---------- add cards by hand ---------- */
+const LEVELS = ['Vague','Medium','Giveaway'];
+function renderAddCard(){
+  if(!$('addCard')) return;
+  const who = $('acWho'), cur = who.value;
+  const names = DATA.people.map(p=>p.n).sort((a,b)=>a.localeCompare(b));
+  who.innerHTML = '<option value="">Pick a person…</option><option value="__new">+ Someone new</option>' + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  who.value = names.includes(cur) || cur==='__new' ? cur : '';
+  if(!$('acTeam').options.length) $('acTeam').innerHTML = TEAM_KEYS.map(k=>`<option value="${k}">${esc(DATA.teams[k])}</option>`).join('');
+  if(!$('acRows').children.length) $('acRows').innerHTML = [1,2,3].map(i=>`<div class="acrow"><input id="acC${i}" maxlength="140" placeholder="${i===1?'Clue, e.g. Has a cat named Biscuit':'Another clue (optional)'}" aria-label="Clue ${i}"><select id="acL${i}" aria-label="How specific is clue ${i}">${LEVELS.map((l,k)=>`<option value="${k+1}" ${k+1===i?'selected':''}>${l}</option>`).join('')}</select><input id="acU${i}" placeholder="Slack link (optional)" aria-label="Source link for clue ${i}"></div>`).join('');
+  document.querySelectorAll('.acnew').forEach(el=>el.hidden = who.value!=='__new');
+  const mine = MANUAL.slice().sort((a,b)=>(b.at||0)-(a.at||0));
+  $('acList').innerHTML = mine.length ? mine.map(m=>`<li data-id="${esc(m.id)}"><div><span class="who2">${esc(m.name)}</span><span class="lvl">${m.kind==='person' ? 'new person · '+esc(DATA.teams[m.team]||'') : (LEVELS[(m.level||2)-1]||'')}</span>${m.kind==='clue'?`<div>${esc(m.clue)}</div>`:''}${m.link?`<a class="csrc" href="${esc(m.link)}" target="_blank" rel="noopener">↗ source</a>`:''}</div><div class="acts"><button class="sm" data-rm="${esc(m.id)}" type="button">Remove</button></div></li>`).join('') : '';
+}
+async function saveManual(entries){
+  entries.forEach(e=>{ e.id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); e.at = Date.now(); });
+  MANUAL = MANUAL.concat(entries); LSset('manual', MANUAL); applyExtras(); render();
+  if(SDB){ for(const e of entries){ try{ await SDB.doc('manual/'+e.id).set(e); }catch(err){ $('acMsg').textContent = 'Saved in this browser only: the game\'s storage didn\'t accept it.'; } } }
+}
+async function removeManual(id){
+  const m = MANUAL.find(x=>x.id===id); if(!m) return;
+  const drop = m.kind==='person' ? MANUAL.filter(x=>x.id===id || (x.kind==='clue' && x.name===m.name)).map(x=>x.id) : [id];
+  MANUAL = MANUAL.filter(x=>!drop.includes(x.id)); LSset('manual', MANUAL); applyExtras(); render();
+  if(SDB){ for(const d of drop){ try{ await SDB.doc('manual/'+d).delete(); }catch(e){} } }
+}
+function submitCard(e){
+  e.preventDefault();
+  const msg = $('acMsg'); let name = $('acWho').value; const entries = [];
+  if(!name){ msg.textContent = 'Pick who the card is about.'; return; }
+  if(name==='__new'){
+    name = $('acName').value.trim().replace(/\s+/g,' ');
+    if(!name){ msg.textContent = 'Give the new person a name.'; return; }
+    if(DATA.people.some(p=>p.n.toLowerCase()===name.toLowerCase())){ msg.textContent = `${name} is already on the board. Pick them from the list instead.`; return; }
+    entries.push({kind:'person', name, team:$('acTeam').value, title:$('acTitle').value.trim()});
+  }
+  const p = byName[name]; const have = p ? p.c.concat((p.x||[]).map(x=>x.t)) : [];
+  const skipped = [];
+  [1,2,3].forEach(i=>{
+    const clue = $('acC'+i).value.trim(); if(!clue) return;
+    if(have.concat(entries.filter(x=>x.kind==='clue').map(x=>x.clue)).some(x=>sim2(x,clue)>=0.6)){ skipped.push(clue); return; }
+    const link = $('acU'+i).value.trim();
+    entries.push({kind:'clue', name, clue, level:+$('acL'+i).value, link: /^https?:\/\//i.test(link) ? link : ''});
+  });
+  if(!entries.some(x=>x.kind==='clue')){ msg.textContent = skipped.length ? `Skipped: too close to a clue ${name} already has.` : 'Write at least one clue.'; return; }
+  saveManual(entries);
+  [1,2,3].forEach(i=>{ $('acC'+i).value=''; $('acU'+i).value=''; }); $('acName').value=''; $('acTitle').value='';
+  $('acWho').value = name;
+  const n = entries.filter(x=>x.kind==='clue').length;
+  msg.textContent = `Added ${n} clue${n>1?'s':''} for ${name}.` + (skipped.length ? ` Skipped ${skipped.length} that overlapped an existing clue.` : '');
 }
 
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -630,6 +720,7 @@ function renderOver(){
   const top = ranked.length ? ranked[0].s : null;
   $('overList').innerHTML = ranked.length ? ranked.map((p,k)=>`<li class="${p.s===top?'win':''}"><b>${k+1}</b><span>${esc(p.n)}${p.s===top?' ★':''}</span><span>${p.s}</span></li>`).join('') : '<li><span></span><span>No players on the scoreboard</span><span></span></li>';
   $('overSub').textContent = `${S.done.length} suspect${S.done.length===1?'':'s'} attributed in ${fmt(S.glen)}.`;
+  $('overList').hidden = !S.scoring; $('overSave').hidden = !S.scoring;
 }
 setInterval(()=>{ paintTimer(); paintGameClock(); }, 200);
 
@@ -641,7 +732,9 @@ function render(){
   $('tlen').value = String(S.tlen||0); $('glen').value = String(S.glen||0);
   $('mode').value = S.mode; $('diff').value = S.diff; $('vary').value = S.vary ? '1' : '0'; $('fresh').checked = !!S.fresh;
   $('modeDesc').textContent = [MODES[S.mode].desc, DIFFS[S.diff]].filter(Boolean).join(' ');
-  renderSeason();
+  renderSeason(); renderAddCard();
+  $('scoring').value = S.scoring ? '1' : '0';
+  $('scoreSec').hidden = !S.scoring; $('season').hidden = !S.scoring; $('worth').hidden = !S.scoring;
   $('gcode').textContent = codeOf() || '—';
   if(IS_HOST()) renderHost(); else renderGame();
   paintTimer(); paintGameClock(); renderOver();
@@ -735,12 +828,12 @@ function renderHost(){
   if(!S.deck.length){ $('hId').textContent='No game loaded'; $('hName').textContent=''; $('hMeta').innerHTML='<span class="hempty">Type the game code shown at the top of the game screen, then press Load.</span>'; $('hClues').innerHTML=''; $('hMug').style.cssText=''; $('hMug').textContent='?'; $('hUp').innerHTML=''; $('hKey').innerHTML=''; ['hNext','hUnmask','hSkip'].forEach(id=>$(id).disabled=true); return; }
   if(!p){ $('hId').textContent='Deck complete'; $('hName').textContent='Game over'; $('hMeta').textContent=''; $('hClues').innerHTML=''; $('hMug').style.cssText=''; $('hMug').textContent='✓'; }
   else {
-    $('hId').textContent = `Now playing · Suspect ${S.idx+1} of ${S.deck.length}` + (S.revealed?' · unmasked':` · worth ${worth()||'—'} pts`);
+    $('hId').textContent = `Now playing · Suspect ${S.idx+1} of ${S.deck.length}` + (S.revealed?' · unmasked':(S.scoring?` · worth ${worth()||'—'} pts`:''));
     $('hName').textContent = p.n; $('hMeta').textContent = `${p.ti} · ${DATA.teams[p.t]}`;
     const hasPic = DATA.sprite && p.i!=null; const m=$('hMug');
     m.className='mug on'+(hasPic?' pic':''); m.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; m.textContent=initials(p.n);
     const items = itemsFor(p);
-    $('hClues').innerHTML = items.map((it,i)=>{ const on = S.revealed||i<S.shown; const s=it.src; return `<li class="${on?'on':''}"><b>${on?'✓':i+1}</b><span>${it.team?'Pod: ':''}${esc(it.txt)}${s&&s.card?'<span class="newtag">NEW</span>':''}${it.swap?`<span class="swaptag">↔ Swap: belongs to ${esc(it.swap)}</span>`:''}${s?`<span class="hq">“${esc(s.q)}”</span>${srcLink(s)}`:''}</span></li>`; }).join('');
+    $('hClues').innerHTML = items.map((it,i)=>{ const on = S.revealed||i<S.shown; const s=it.src; return `<li class="${on?'on':''}"><b>${on?'✓':i+1}</b><span>${it.team?'Pod: ':''}${esc(it.txt)}${s&&s.card?'<span class="newtag">NEW</span>':''}${s&&s.manual?'<span class="addtag">ADDED</span>':''}${it.swap?`<span class="swaptag">↔ Swap: belongs to ${esc(it.swap)}</span>`:''}${s?`<span class="hq">“${esc(s.q)}”</span>${srcLink(s)}`:''}</span></li>`; }).join('');
   }
   $('hNext').disabled = !p || S.revealed || S.shown >= (p?totalClues(p):0);
   $('hUnmask').disabled = !p || S.revealed; $('hSkip').disabled = !p;
@@ -776,6 +869,10 @@ $('diff').onchange=e=>{ S.diff=e.target.value; newGame(); };
 $('vary').onchange=e=>{ S.vary=e.target.value==='1'; newGame(); };
 $('fresh').onchange=e=>{ S.fresh=e.target.checked; newGame(); };
 $('soundBtn').onclick=()=>setSound(!SOUND); setSound(SOUND);
+$('scoring').onchange=e=>{ S.scoring = e.target.value==='1'; store(); render(); };
+$('acForm').addEventListener('submit', submitCard);
+$('acWho').addEventListener('change', ()=>{ document.querySelectorAll('.acnew').forEach(el=>el.hidden = $('acWho').value!=='__new'); $('acMsg').textContent=''; });
+$('acList').addEventListener('click', e=>{ const b=e.target.closest('[data-rm]'); if(b) removeManual(b.dataset.rm); });
 $('seasonSave').onclick=saveToSeason; $('overSave').onclick=saveToSeason; $('seasonNew').onclick=endSeason;
 $('tlen').onchange=e=>{ S.tlen=+e.target.value; resetTimer(); store(); render(); };
 $('glen').onchange=e=>{ S.glen=+e.target.value; resetGameClock(); store(); render(); };
@@ -813,8 +910,9 @@ document.addEventListener('keydown',e=>{
 window.addEventListener('hashchange', ()=>{ if(!IS_HOST() && !S.deck.length) newGame(); else render(); if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){} });
 
 function start(snap){
+  applyExtras();
   const saved = (snap && snap.S) || load();
-  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(!MODES[S.mode]) S.mode='classic'; if(!DIFFS.hasOwnProperty(S.diff)) S.diff='normal'; if(S.vary==null) S.vary=true; if(S.fresh==null) S.fresh=true; if(!S.podPts) S.podPts={}; if(S.tlen==null) S.tlen=45; if(S.glen==null) S.glen=0; if(!Array.isArray(S.skip)) S.skip=[]; render(); }
+  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(S.scoring==null) S.scoring=true; if(!MODES[S.mode]) S.mode='classic'; if(!DIFFS.hasOwnProperty(S.diff)) S.diff='normal'; if(S.vary==null) S.vary=true; if(S.fresh==null) S.fresh=true; if(!S.podPts) S.podPts={}; if(S.tlen==null) S.tlen=45; if(S.glen==null) S.glen=0; if(!Array.isArray(S.skip)) S.skip=[]; render(); }
   else if(IS_HOST()) render();
   else newGame();
   if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){}
@@ -839,17 +937,7 @@ function start(snap){
   const TAB = 't' + Math.random().toString(36).slice(2);
   const MAXC = 5;
 
-  function applyCards(){
-    DATA.people.forEach(p=>{ p.c = base[p.n].c.slice(); p.cs = base[p.n].cs.slice(); });
-    cards.filter(c=>c.status==='approved').sort((a,b)=>(a.foundAt||0)-(b.foundAt||0)).forEach(c=>{
-      const p = byName[c.name]; if(!p || p.c.length>=MAXC) return;
-      if(p.c.some(x=>sim(x,c.clue)>=0.6)) return;
-      const src = {s:c.src, u:c.url, q:c.quote, card:true};
-      const at = c.level<=1 ? 0 : c.level===2 ? Math.ceil(p.c.length/2) : p.c.length;
-      p.c.splice(at,0,c.clue); p.cs.splice(at,0,src);
-    });
-    playable = DATA.people.filter(hasClues);
-  }
+  function applyCards(){ SCOUT_CARDS = cards; applyExtras(); }
   function status(msg){ $('intelStatus').textContent = msg; }
   function renderIntel(){
     $('intel').hidden = !editor;
@@ -946,7 +1034,7 @@ Reply with only a JSON array (empty if nothing qualifies). Each item: {"mid": me
       }
       const seenArr = [...seen, ...fresh.map(m=>m.url)].slice(-3000);
       await db.doc('scout/state').set({lastRun:Date.now(), lastScan:today, seen:seenArr});
-      status(fresh.length ? `Checked ${fresh.length} new post${fresh.length>1?'s':''}: ${added} new card${added===1?'':'s'} to review.` : 'No new posts from people on the board since the last check.');
+      status(fresh.length ? `Checked ${fresh.length} new post${fresh.length>1?'s':''}: ${added} new card${added===1?'':'s'} to review.` + (added<fresh.length ? ' Posts with no light, shareable fact (or one that repeats an existing clue) are skipped; add those by hand below if you like.' : '') : `No new posts from people on the board since the last check (${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}). Posts can take a minute to show up in Slack search.`);
     }catch(err){
       const code = err && err.code;
       status(code==='not_granted'||code==='consent_required' ? 'Slack access wasn\'t allowed, so the scout couldn\'t check. Use "Check Slack now" to try again.' : code==='rate_limited' ? 'Slack or Claude is busy right now. Try again in a bit.' : 'The scout hit a problem: '+(err && (err.message||code) || err));
