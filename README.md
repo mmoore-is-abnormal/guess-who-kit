@@ -31,6 +31,19 @@ Your finished game contains coworkers' names, photos and quotes. Keep it in a pr
 - Click tiles to flip people down. **Flip down other teams** clears everyone outside the revealed team.
 - **Host view ↗** opens the answers in a second window: keep it off the shared screen. **Skip this person**, or the Skip toggle on any answer-key row, takes someone out of the game (handy if you're on the board yourself). In the same browser it follows the game automatically. Anywhere else, type the **game code** shown at the top of the game screen and use ◀ ▶ to match the suspect number.
 
+## Modes, difficulty and replay
+
+Set these in the setup bar above the case file. Changing any of them starts a new game.
+
+- **Mode**: *Classic*; *Lightning* (one clue and the pod: 2 points, then 1; pairs well with the 15-second timer); *Two Truths & a Swap* (one clue secretly belongs to someone else; the unmask shows which, so give a bonus point to whoever called it); *Pod Showdown* (pods compete as teams and a pod can't score on its own member).
+- **Difficulty**: *Easy* shows the pod first; *Normal*; *Hard* drops the pod clue and only the first two clues score.
+- **Clues**: *New mix each game* draws a different set and order of clues per person from everything we found (core clues plus extras), always vague to specific. *Same every game* uses the original clues.
+- **Fresh faces first**: people who haven't come up recently go to the front of the deck.
+- **Season**: *Save this game to the season* adds the scoreboard to season standings (each game code can only be saved once, so nothing double-counts). *Start a new season* archives the champion.
+- **Sound**: reveal swoosh, unmask stamp, point chime, tile clicks, countdown ticks and a final fanfare. Toggle with the Sound button or **M**. Sound plays only in the game window, so it's what the room hears when you share with computer audio.
+
+The game code carries the mode, difficulty and clue setting (for example `4821-S-H`), so a host view anywhere can load the same game.
+
 ## Build by hand
 
     python3 engine/build.py --data engine/sample-data.json --out index.html

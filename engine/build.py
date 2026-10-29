@@ -51,6 +51,6 @@ if not a.artifact:
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             '</head>\n<body>\n' + page + '\n</body>\n</html>\n')
 pathlib.Path(a.out).write_text(page)
-playable = sum(1 for p in data["people"] if p.get("c"))
+playable = sum(1 for p in data["people"] if p.get("c") or p.get("x"))
 print(f"wrote {a.out}: {len(page)//1024} KB, {len(data['people'])} on the board, {playable} playable, "
       f"photos {'on' if 'sprite' in data else 'off'}")

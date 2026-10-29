@@ -22,7 +22,8 @@
     }
 
 - `teams` keys are short ids of lowercase letters a-z only (the game code uses them, so no digits or dashes); their order sets board order and colors (8 colors, then they repeat). Team names show on the board and as the last clue.
-- `c` and `cs` line up one-to-one. `c: []` makes the person a board-only decoy.
+- `c` and `cs` line up one-to-one: the person's core clues, vague to specific.
+- `x` (optional) holds extra clues for replay: `[{"t": "clue", "l": 1|2|3, "s": {"s": "#channel date", "u": "permalink", "q": "quote"}}]`, where `l` is 1 vague, 2 medium, 3 near-giveaway. With *New mix each game* on, each game code draws a different set from `c` plus `x`. A person with no clues in either is a board-only decoy.
 - `cols`, `rows` and `i` are only needed with photos. `i` is the person's tile in the grid (build.py fills it with the `people` index when missing); `cols`/`rows` must match the grid, and the photo script prints them.
 - Keep quotes under about 160 characters; they show in the host view.
 - `sid` is the person's Slack user ID. The new-intel scout only uses posts written by someone on the board, matched by this ID.

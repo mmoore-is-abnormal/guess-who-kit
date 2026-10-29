@@ -210,6 +210,17 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 .sync.on{border-color:var(--t1);color:var(--t1);font-weight:700}
 .key tr{cursor:pointer}
 .hempty{color:var(--muted);font-size:16px}
+.setup{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px}
+.setup .fld{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 auto}
+.setup .fld select{flex:none;font-size:14px;padding:7px 8px}
+.setup .chk{flex-direction:row;align-items:center;gap:8px;font-weight:700;font-size:14px;padding-bottom:8px}
+.setup .chk input{width:18px;height:18px;accent-color:var(--accent)}
+.mode-desc{flex:1 1 100%;margin:0;font-size:13px;color:var(--muted)}
+.clue.swapped .txt .ph{text-decoration:line-through;text-decoration-color:var(--accent)}
+.swaptag{display:block;margin-top:3px;font-family:var(--f-mono);font-size:12px;font-weight:700;color:var(--accent)}
+.season-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.season .stand li{font-size:16px}
+.pl .sm[disabled]{opacity:.4}
 </style>
 
 <div class="wrap" id="game">
@@ -219,21 +230,28 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
       <h1>Guess Who<span class="q">?</span></h1>
     </div>
     <div class="hdr-ctl">
-      <label class="eyebrow" for="pool">Deck</label>
-      <select id="pool"></select>
-      <label class="eyebrow" for="glen">Game clock</label>
-      <select id="glen" style="flex:0 1 110px">
-        <option value="0">Off</option><option value="300">5 min</option><option value="600">10 min</option><option value="900">15 min</option><option value="1200">20 min</option>
-      </select>
       <button class="gclock" id="gclock" type="button" hidden title="Start or pause the game clock (G)"><small>Game</small><span id="gclockT">10:00</span></button>
-      <label class="eyebrow" for="tlen">Per suspect</label>
-      <select id="tlen" style="flex:0 1 110px">
-        <option value="0">Off</option><option value="30">30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option><option value="90">90 sec</option>
-      </select>
+      <button class="btn" id="soundBtn" type="button" aria-pressed="true" title="Sound effects (M)">Sound on</button>
       <button class="btn" id="shuffle" type="button">New game</button>
       <a class="btn" id="hostBtn" href="#host" target="_blank" rel="noopener">Host view ↗</a>
     </div>
   </header>
+  <section class="setup" aria-label="Game setup">
+    <label class="fld"><span class="eyebrow">Mode</span><select id="mode">
+      <option value="classic">Classic</option><option value="lightning">Lightning</option><option value="swap">Two Truths &amp; a Swap</option><option value="showdown">Pod Showdown</option>
+    </select></label>
+    <label class="fld"><span class="eyebrow">Difficulty</span><select id="diff"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+    <label class="fld"><span class="eyebrow">Deck</span><select id="pool"></select></label>
+    <label class="fld"><span class="eyebrow">Clues</span><select id="vary"><option value="1">New mix each game</option><option value="0">Same every game</option></select></label>
+    <label class="fld chk"><input type="checkbox" id="fresh"><span>Fresh faces first</span></label>
+    <label class="fld"><span class="eyebrow">Game clock</span><select id="glen">
+      <option value="0">Off</option><option value="300">5 min</option><option value="600">10 min</option><option value="900">15 min</option><option value="1200">20 min</option>
+    </select></label>
+    <label class="fld"><span class="eyebrow">Per suspect</span><select id="tlen">
+      <option value="0">Off</option><option value="15">15 sec</option><option value="30">30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option><option value="90">90 sec</option>
+    </select></label>
+    <p class="mode-desc" id="modeDesc"></p>
+  </section>
 
   <main>
     <div class="col">
@@ -268,7 +286,15 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
           <button class="btn" type="submit">Add</button>
         </form>
         <ul class="players" id="players"></ul>
-        <p class="hint">Award gives the points currently on the case file. Use ± to adjust.</p>
+        <p class="hint" id="shint">Award gives the points currently on the case file. Use ± to adjust.</p>
+        <button class="btn" id="seasonSave" type="button">Save this game to the season</button>
+      </section>
+
+      <section class="score season" id="season">
+        <div class="season-top"><h2 id="seasonName">Season 1</h2><span class="hint" id="seasonMeta"></span></div>
+        <ol class="stand" id="seasonList"></ol>
+        <div class="ctl"><button class="btn" id="seasonNew" type="button">Start a new season</button></div>
+        <p class="hint" id="seasonPast"></p>
       </section>
     </div>
 
@@ -299,7 +325,8 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
     <p class="meta" id="overSub"></p>
     <ol class="stand" id="overList"></ol>
     <div class="ctl">
-      <button class="btn gold" id="overKeep" type="button">Keep playing</button>
+      <button class="btn gold" id="overSave" type="button">Save to the season</button>
+      <button class="btn" id="overKeep" type="button">Keep playing</button>
       <button class="btn" id="overNew" type="button">New game (reset scores)</button>
     </div>
   </div>
@@ -315,6 +342,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
   <div class="host-grid">
     <section class="hcard">
       <h3 id="hId">Now playing</h3>
+      <p class="hostlink" id="hMode"></p>
       <div class="hnow">
         <div class="mug on" id="hMug" aria-hidden="true"></div>
         <div class="who"><span class="nm" id="hName"></span><span class="meta" id="hMeta"></span></div>
@@ -348,7 +376,7 @@ footer{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18p
 </div>
 
 <script>
-const DATA = {"meta": {"title": "Guess Who Demo", "eyebrow": "Sample data · replace with your team", "everyone": "Everyone", "slug": "demo", "sources": "Sample data. In a real game every clue links to the Slack post it came from."}, "teams": {"blue": "Blue Team", "green": "Green Team", "gold": "Gold Team"}, "people": [{"n": "Avery Example", "t": "blue", "ti": "Team Lead", "c": ["Drinks tea, never coffee.", "Has a cat named Pixel.", "Once won a pie-eating contest at a county fair."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Blake Sample", "t": "blue", "ti": "Analyst", "c": ["Based in Denver.", "Plays bass in a weekend cover band.", "Has visited every national park in Utah."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Casey Placeholder", "t": "blue", "ti": "Analyst", "c": ["Loves crossword puzzles.", "Bakes sourdough every Sunday.", "Grew up on a sailboat."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Devon Demo", "t": "blue", "ti": "Analyst", "c": [], "cs": []}, {"n": "Emery Mock", "t": "green", "ti": "Manager", "c": ["Runs half marathons.", "Collects vintage board games.", "Can solve a Rubik's cube in under a minute."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Finley Test", "t": "green", "ti": "Analyst", "c": ["Based in Austin.", "Has two dogs named Taco and Queso.", "Was an extra in a superhero movie."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Gray Fixture", "t": "green", "ti": "Analyst", "c": ["Into rock climbing.", "Speaks three languages.", "Keeps bees in the backyard."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Harper Stub", "t": "green", "ti": "Engineer", "c": [], "cs": []}, {"n": "Indigo Draft", "t": "gold", "ti": "Manager", "c": ["Favorite snack: sour gummy worms.", "Paints miniature figurines.", "Hiked to Everest Base Camp."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Jordan Sketch", "t": "gold", "ti": "Analyst", "c": ["Based in Chicago.", "Plays competitive pickleball.", "Has a pet tortoise older than the team."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Kai Prototype", "t": "gold", "ti": "Analyst", "c": ["Loves karaoke.", "Restoring a 1970s motorcycle.", "Used to be a professional juggler."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}, {"n": "Logan Outline", "t": "gold", "ti": "Analyst", "c": ["Watches every Studio Ghibli movie each fall.", "Grows hot peppers.", "Once met an astronaut on a flight."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}]}], "cols": 10, "rows": 10};
+const DATA = {"meta": {"title": "Guess Who Demo", "eyebrow": "Sample data · replace with your team", "everyone": "Everyone", "slug": "demo", "sources": "Sample data. In a real game every clue links to the Slack post it came from."}, "teams": {"blue": "Blue Team", "green": "Green Team", "gold": "Gold Team"}, "people": [{"n": "Avery Example", "t": "blue", "ti": "Team Lead", "c": ["Drinks tea, never coffee.", "Has a cat named Pixel.", "Once won a pie-eating contest at a county fair."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": [{"t": "Grows tomatoes on a balcony.", "l": 1, "s": {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote."}}, {"t": "Collects vintage postcards.", "l": 2, "s": {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote."}}]}, {"n": "Blake Sample", "t": "blue", "ti": "Analyst", "c": ["Based in Denver.", "Plays bass in a weekend cover band.", "Has visited every national park in Utah."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}, {"n": "Casey Placeholder", "t": "blue", "ti": "Analyst", "c": ["Loves crossword puzzles.", "Bakes sourdough every Sunday.", "Grew up on a sailboat."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}, {"n": "Devon Demo", "t": "blue", "ti": "Analyst", "c": [], "cs": [], "x": []}, {"n": "Emery Mock", "t": "green", "ti": "Manager", "c": ["Runs half marathons.", "Collects vintage board games.", "Can solve a Rubik's cube in under a minute."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": [{"t": "Knits during meetings.", "l": 1, "s": {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote."}}, {"t": "Once biked across Iowa.", "l": 3, "s": {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote."}}]}, {"n": "Finley Test", "t": "green", "ti": "Analyst", "c": ["Based in Austin.", "Has two dogs named Taco and Queso.", "Was an extra in a superhero movie."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}, {"n": "Gray Fixture", "t": "green", "ti": "Analyst", "c": ["Into rock climbing.", "Speaks three languages.", "Keeps bees in the backyard."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}, {"n": "Harper Stub", "t": "green", "ti": "Engineer", "c": [], "cs": [], "x": []}, {"n": "Indigo Draft", "t": "gold", "ti": "Manager", "c": ["Favorite snack: sour gummy worms.", "Paints miniature figurines.", "Hiked to Everest Base Camp."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}, {"n": "Jordan Sketch", "t": "gold", "ti": "Analyst", "c": ["Based in Chicago.", "Plays competitive pickleball.", "Has a pet tortoise older than the team."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": [{"t": "Makes a mean chili.", "l": 1, "s": {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote."}}]}, {"n": "Kai Prototype", "t": "gold", "ti": "Analyst", "c": ["Loves karaoke.", "Restoring a 1970s motorcycle.", "Used to be a professional juggler."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}, {"n": "Logan Outline", "t": "gold", "ti": "Analyst", "c": ["Watches every Studio Ghibli movie each fall.", "Grows hot peppers.", "Once met an astronaut on a flight."], "cs": [{"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}, {"s": "#example-channel 2026-01-01", "u": "", "q": "Sample quote: the builder fills this with the person's own words."}], "x": []}], "cols": 10, "rows": 10};
 const TEAM_KEYS = Object.keys(DATA.teams);
 const $ = id => document.getElementById(id);
 const initials = n => n.replace(/\bJr\b/,'').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -356,7 +384,8 @@ const META = Object.assign({eyebrow:'Team Icebreaker', everyone:'Everyone', slug
 const KEY = 'gw-' + META.slug;
 const tc = t => `var(--t${Math.max(0,TEAM_KEYS.indexOf(t)) % 8})`;
 $('eyebrow').textContent = META.eyebrow; $('srcnote').textContent = META.sources;
-let playable = DATA.people.filter(p => p.c.length);
+const hasClues = p => (p.c||[]).length + (p.x||[]).length > 0;
+let playable = DATA.people.filter(hasClues);
 const byName = Object.fromEntries(DATA.people.map(p=>[p.n,p]));
 if(DATA.sprite){ document.documentElement.style.setProperty('--sprite', `url(${DATA.sprite})`); document.documentElement.style.setProperty('--sprite-size', `${DATA.cols*100}% ${DATA.rows*100}%`); }
 function picStyle(p){
@@ -366,7 +395,7 @@ function picStyle(p){
 }
 const IS_HOST = () => location.hash === '#host';
 
-let S = {pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, glen:0, gEnd:null, gLeft:null, gOver:false, gDismiss:false, skip:[], rev:0};
+let S = {mode:'classic', diff:'normal', vary:true, fresh:true, podPts:{}, saved:false, pool:'all', seed:0, deck:[], idx:0, shown:0, revealed:false, down:[], done:[], players:[], tlen:45, tEnd:null, tLeft:null, glen:0, gEnd:null, gLeft:null, gOver:false, gDismiss:false, skip:[], rev:0};
 let linked = false;
 
 let bc=null; try{ bc = new BroadcastChannel(KEY); bc.onmessage = e => { if(e.data && e.data.ping){ if(!IS_HOST() && S.deck.length) store(); return; } if(e.data && e.data.rev > S.rev){ S = e.data; linked = true; render(); } }; }catch(e){}
@@ -374,25 +403,148 @@ window.addEventListener('storage', e => { if(e.key===KEY){ const v = load(); if(
 function store(){ S.rev = Math.max(Date.now(), (S.rev||0) + 1); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} try{ bc && bc.postMessage(S); }catch(e){} }
 function load(){ try{ const v = JSON.parse(localStorage.getItem(KEY)||'null'); if(v && Array.isArray(v.deck)) return v; }catch(e){} return null; }
 
+/* ---------- persistence: history, games, season ---------- */
+const LS = k => { try{ return JSON.parse(localStorage.getItem(KEY+'-'+k)||'null'); }catch(e){ return null; } };
+const LSset = (k,v) => { try{ localStorage.setItem(KEY+'-'+k, JSON.stringify(v)); }catch(e){} };
+const newSeason = (num, past) => ({name:`Season ${num}`, num, started:Date.now(), totals:{}, games:0, saved:[], past:past||[]});
+let HIST = LS('hist') || {}, GAMES = LS('games') || {}, SEASON = LS('season') || newSeason(1);
+let SDB = null; const chains = {};
+function remote(path, data){ if(!SDB) return; chains[path] = (chains[path]||Promise.resolve()).then(()=>SDB.doc(path).set(data)).catch(()=>{}); }
+(async()=>{
+  if(!window.claude || !window.claude.use) return;
+  const db = await window.claude.use('db'); if(!db) return; SDB = db;
+  db.doc('season/current').onSnapshot(s=>{ if(s.exists){ SEASON = s.data(); LSset('season', SEASON); renderSeason(); } }, ()=>{});
+  db.doc('history/seen').onSnapshot(s=>{ if(s.exists){ HIST = s.data().seen || {}; LSset('hist', HIST); } }, ()=>{});
+  db.collection('games').onSnapshot(sn=>{ sn.docs.forEach(d=>{ GAMES[d.id] = d.data(); }); LSset('games', GAMES); }, ()=>{});
+})();
+function rememberGame(){
+  const code = codeOf(); if(!code) return;
+  GAMES[code] = {deck:S.deck, at:Date.now()};
+  const keys = Object.keys(GAMES).sort((a,b)=>(GAMES[b].at||0)-(GAMES[a].at||0)); keys.slice(60).forEach(k=>delete GAMES[k]);
+  LSset('games', GAMES); remote('games/'+code, GAMES[code]);
+}
+let histTimer=null;
+function recordSeen(n){ HIST[n] = Date.now(); LSset('hist', HIST); clearTimeout(histTimer); histTimer = setTimeout(()=>remote('history/seen', {seen:HIST}), 800); }
+function results(){
+  if(S.mode==='showdown') return TEAM_KEYS.filter(k=>playable.some(p=>p.t===k) && (S.podPts[k]||0)!==0).map(k=>({n:DATA.teams[k], s:S.podPts[k]||0}));
+  return S.players.map(p=>({n:p.n, s:p.s}));
+}
+function saveToSeason(){
+  const code = codeOf(); if(!code) return;
+  if(S.saved || SEASON.saved.includes(code)){ S.saved = true; renderSeason(); return; }
+  const res = results(); if(!res.length) { $('shint').textContent = 'Add players to the scoreboard first.'; return; }
+  const top = Math.max(...res.map(r=>r.s));
+  res.forEach(r=>{ const k = r.n.trim().toLowerCase(); const e = SEASON.totals[k] || {n:r.n.trim(), pts:0, games:0, wins:0};
+    e.n = r.n.trim(); e.pts += r.s; e.games += 1; if(top>0 && r.s===top) e.wins += 1; SEASON.totals[k] = e; });
+  SEASON.games += 1; SEASON.saved = SEASON.saved.concat(code).slice(-500);
+  S.saved = true; LSset('season', SEASON); remote('season/current', SEASON); store(); render();
+}
+let seasonConfirm = false;
+function endSeason(){
+  if(!seasonConfirm){ seasonConfirm = true; $('seasonNew').textContent = `Click again to end ${SEASON.name}`; setTimeout(()=>{ seasonConfirm=false; renderSeason(); }, 4000); return; }
+  seasonConfirm = false;
+  const ranked = Object.values(SEASON.totals).sort((a,b)=>b.pts-a.pts);
+  const past = [{name:SEASON.name, champ: ranked[0] ? ranked[0].n : null, pts: ranked[0] ? ranked[0].pts : 0, ended:Date.now()}].concat(SEASON.past||[]).slice(0,10);
+  SEASON = newSeason((SEASON.num||1)+1, past); LSset('season', SEASON); remote('season/current', SEASON); renderSeason();
+}
+function renderSeason(){
+  if(!$('season')) return;
+  const ranked = Object.values(SEASON.totals||{}).sort((a,b)=>b.pts-a.pts || b.wins-a.wins);
+  $('seasonName').textContent = SEASON.name;
+  $('seasonMeta').textContent = `${SEASON.games} game${SEASON.games===1?'':'s'} saved`;
+  $('seasonList').innerHTML = ranked.length ? ranked.slice(0,10).map((e,i)=>`<li class="${i===0?'win':''}"><b>${i+1}</b><span>${esc(e.n)}${i===0?' ★':''} <span class="hint">· ${e.games} game${e.games===1?'':'s'}${e.wins?` · ${e.wins} win${e.wins===1?'':'s'}`:''}</span></span><span>${e.pts}</span></li>`).join('') : '<li><span></span><span class="hint">No games saved yet. Finish a game, then save it here.</span><span></span></li>';
+  $('seasonPast').textContent = (SEASON.past||[]).filter(p=>p.champ).map(p=>`${p.name}: ${p.champ} (${p.pts})`).join(' · ') ? 'Past champions: ' + (SEASON.past||[]).filter(p=>p.champ).map(p=>`${p.name}: ${p.champ} (${p.pts})`).join(' · ') : '';
+  if(!seasonConfirm) $('seasonNew').textContent = 'Start a new season';
+  const done = S.saved || (SEASON.saved||[]).includes(codeOf());
+  $('seasonSave').disabled = done || !S.deck.length; $('seasonSave').textContent = done ? 'Saved to the season ✓' : 'Save this game to the season';
+  const os = $('overSave'); if(os){ os.disabled = done; os.textContent = done ? 'Saved to the season ✓' : 'Save to the season'; }
+}
+
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function resetTimer(){ S.tEnd=null; S.tLeft=null; timeupFired=false; }
 function rng(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-function buildDeck(pool, seed){
+const strHash = s => { let h=2166136261>>>0; for(const ch of String(s)){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h; };
+function seededShuffle(a, r){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function buildDeck(pool, seed, fresh){
   const names = (pool==='all' ? playable : playable.filter(p=>p.t===pool)).map(p=>p.n).sort();
-  const r = rng(seed); for(let i=names.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [names[i],names[j]]=[names[j],names[i]]; }
-  return names;
+  const r = rng(seed);
+  if(!fresh || !Object.keys(HIST).length) return seededShuffle(names, r);
+  // never-seen first, then oldest first; ties (same day) shuffled
+  const day = n => HIST[n] ? Math.floor(HIST[n]/864e5) : -1;
+  const groups = {}; names.forEach(n=>{ (groups[day(n)] = groups[day(n)] || []).push(n); });
+  return Object.keys(groups).map(Number).sort((a,b)=>a-b).flatMap(k=>seededShuffle(groups[k], r));
 }
-const codeOf = () => S.seed ? String(S.seed) + (S.pool==='all' ? '' : '-' + S.pool.toUpperCase()) : '';
-function parseCode(s){ const m = String(s).trim().toUpperCase().match(/^(\d{3,6})(?:-([A-Z]+))?$/); if(!m) return null; const pool = m[2] ? m[2].toLowerCase() : 'all'; if(pool!=='all' && !DATA.teams[pool]) return null; return {seed:+m[1], pool}; }
-function loadCode(code){ const c = parseCode(code); if(!c) return false; S.pool=c.pool; S.seed=c.seed; S.deck=buildDeck(c.pool,c.seed); S.idx=0; while(S.idx<S.deck.length && (S.skip||[]).includes(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock(); store(); render(); return true; }
+const MODE_KEY = {classic:'', lightning:'L', swap:'S', showdown:'P'}, DIFF_KEY = {easy:'E', normal:'', hard:'H'};
+const codeOf = () => S.seed ? [String(S.seed), S.pool==='all'?'':S.pool.toUpperCase(), MODE_KEY[S.mode]||'', DIFF_KEY[S.diff]||'', S.vary?'':'F'].filter(Boolean).join('-') : '';
+function parseCode(s){
+  const parts = String(s).trim().toUpperCase().split('-').filter(Boolean); if(!parts.length || !/^\d{3,6}$/.test(parts[0])) return null;
+  const c = {seed:+parts[0], pool:'all', mode:'classic', diff:'normal', vary:true};
+  for(const tk of parts.slice(1)){
+    if(tk.length>1){ const k=tk.toLowerCase(); if(!DATA.teams[k]) return null; c.pool=k; }
+    else if(tk==='L') c.mode='lightning'; else if(tk==='S') c.mode='swap'; else if(tk==='P') c.mode='showdown';
+    else if(tk==='E') c.diff='easy'; else if(tk==='H') c.diff='hard'; else if(tk==='F') c.vary=false; else return null;
+  }
+  return c;
+}
+function loadCode(code){ const c = parseCode(code); if(!c) return false; Object.assign(S, {pool:c.pool, seed:c.seed, mode:c.mode, diff:c.diff, vary:c.vary}); const g = GAMES[codeOf()]; S.deck = g && Array.isArray(g.deck) ? g.deck.filter(n=>byName[n]) : buildDeck(c.pool,c.seed,false); S.idx=0; S.saved=false; S.podPts={}; while(S.idx<S.deck.length && (S.skip||[]).includes(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock(); store(); render(); return true; }
 function newGame(){
   S.seed = 1000 + Math.floor(Math.random()*9000);
-  S.deck = buildDeck(S.pool, S.seed); S.idx=0; while(S.idx<S.deck.length && (S.skip||[]).includes(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock();
+  S.deck = buildDeck(S.pool, S.seed, S.fresh); S.idx=0; S.saved=false; S.podPts={}; S.players.forEach(p=>p.s=0);
+  rememberGame(); while(S.idx<S.deck.length && (S.skip||[]).includes(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; S.done=[]; resetTimer(); resetGameClock();
   store(); render();
 }
 const cur = () => byName[S.deck[S.idx]];
-const totalClues = p => p.c.length + 1;
-function worth(){ const p=cur(); if(!p || S.revealed) return 0; return Math.max(1, 4 - Math.max(1,S.shown)); }
+/* ---------- clues, modes, difficulty ---------- */
+const MODES = {
+  classic:{desc:'Classic: clues go from vague to giveaway. Guess early for more points.'},
+  lightning:{desc:'Lightning: one clue and the pod, that\'s it. 2 points on the clue, 1 on the pod. Pair it with a 15-second timer.'},
+  swap:{desc:'Two Truths & a Swap: one clue secretly belongs to someone else. The unmask shows which one, so award a bonus point to whoever called it.'},
+  showdown:{desc:'Pod Showdown: pods compete as teams. A pod can\'t score on one of its own members.'},
+};
+const DIFFS = {easy:'Easy: the pod is shown first.', normal:'', hard:'Hard: no pod clue, and only the first two clues score.'};
+function sim2(a,b){ const tk=s=>new Set((String(s).toLowerCase().match(/[a-z0-9]+/g)||[]).filter(w=>w.length>2)); const A=tk(a),B=tk(b); if(!A.size||!B.size) return 0; let n=0; A.forEach(w=>{ if(B.has(w)) n++; }); return n/Math.min(A.size,B.size); }
+function poolOf(p){
+  const n=p.c.length;
+  return p.c.map((t,i)=>({t, s:p.cs[i], l: n===1?2 : i===0?1 : i===n-1?3 : 2})).concat((p.x||[]).map(e=>({t:e.t, s:e.s, l:e.l||2})));
+}
+function drawFor(p){
+  const pool = poolOf(p);
+  if(!S.vary && p.c.length) return pool.slice(0, p.c.length);
+  const r = rng(strHash(S.seed+'|'+p.n));
+  const want = Math.min(pool.length, Math.max(3, p.c.length));
+  const by = {1:[],2:[],3:[]}; seededShuffle(pool, r).forEach(c=>by[c.l].push(c));
+  const take = (...ls) => { for(const l of ls){ if(by[l].length) return by[l].shift(); } return null; };
+  const picks=[]; const add = c => { if(c && !picks.some(x=>sim2(x.t,c.t)>=0.6)) picks.push(c); };
+  add(take(3,2,1)); add(take(1,2,3));
+  while(picks.length<want){ const c=take(2,1,3); if(!c) break; add(c); }
+  return picks.sort((a,b)=>a.l-b.l);
+}
+function itemsFor(p){
+  if(!p) return [];
+  let cl = drawFor(p).map((c,i)=>({lbl:'', txt:c.t, src:c.s, lvl:c.l}));
+  if(S.mode==='lightning'){ const mid = cl.find(c=>c.lvl===2) || cl[cl.length-1]; cl = mid ? [mid] : []; }
+  if(S.mode==='swap' && cl.length>=2){
+    const r = rng(strHash('swap|'+S.seed+'|'+p.n));
+    const donors = playable.filter(q=>q.n!==p.n);
+    for(let tries=0; tries<12 && donors.length; tries++){
+      const q = donors[Math.floor(r()*donors.length)];
+      const opts = poolOf(q).filter(c=>c.l<=2 && !cl.some(x=>sim2(x.txt,c.t)>=0.5));
+      if(!opts.length) continue;
+      const c = opts[Math.floor(r()*opts.length)];
+      const at = Math.floor(r()*(cl.length-1));
+      cl[at] = {lbl:'', txt:c.t, src:c.s, lvl:c.l, swap:q.n};
+      break;
+    }
+  }
+  cl.forEach((c,i)=>c.lbl=`IOC ${i+1}`);
+  const team = {lbl:'Pod', txt:DATA.teams[p.t], team:true};
+  if(S.diff==='easy') return [team, ...cl];
+  if(S.diff==='hard') return cl;
+  return [...cl, team];
+}
+const totalClues = p => itemsFor(p).length;
+function pointsTable(){ if(S.mode==='lightning') return [2,1]; if(S.diff==='hard') return [3,2]; return [3,2,1]; }
+function worth(){ const p=cur(); if(!p || S.revealed) return 0; const tb=pointsTable(); const k=Math.max(1,S.shown); return k<=tb.length ? tb[k-1] : (S.diff==='hard' ? 0 : tb[tb.length-1]); }
 
 /* ---------- timer ---------- */
 let timeupFired=false;
@@ -402,8 +554,40 @@ function startTimer(){ if(!S.tlen||S.revealed||!cur()) return; const left = S.tL
 function pauseTimer(){ if(!S.tEnd) return; S.tLeft = Math.max(0,(S.tEnd-Date.now())/1000); S.tEnd=null; }
 function toggleTimer(){ running() ? pauseTimer() : startTimer(); store(); render(); }
 const fmt = s => { s=Math.ceil(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
-let actx=null;
-function buzz(){ try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.type='square'; o.frequency.value=196; g.gain.setValueAtTime(.0001,actx.currentTime); g.gain.exponentialRampToValueAtTime(.18,actx.currentTime+.02); g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+.7); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime+.75);}catch(e){} }
+/* ---------- sound ---------- */
+let actx=null, SOUND = (()=>{ try{ return localStorage.getItem('gw-sound')!=='off'; }catch(e){ return true; } })();
+function ac(){ if(!SOUND) return null; try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); return actx; }catch(e){ return null; } }
+function tone(f, dur, {type='sine', vol=.15, to=null, at=0}={}){ const a=ac(); if(!a) return; const t0=a.currentTime+at; const o=a.createOscillator(), g=a.createGain(); o.type=type; o.frequency.setValueAtTime(f,t0); if(to) o.frequency.exponentialRampToValueAtTime(to,t0+dur); g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+.01); g.gain.exponentialRampToValueAtTime(.0001,t0+dur); o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+dur+.05); }
+function noise(dur, {vol=.12, freq=1800, q=.8, at=0, sweep=null}={}){ const a=ac(); if(!a) return; const t0=a.currentTime+at; const len=Math.floor(a.sampleRate*dur); const buf=a.createBuffer(1,len,a.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len); const s=a.createBufferSource(); s.buffer=buf; const f=a.createBiquadFilter(); f.type='bandpass'; f.frequency.setValueAtTime(freq,t0); if(sweep) f.frequency.exponentialRampToValueAtTime(sweep,t0+dur); f.Q.value=q; const g=a.createGain(); g.gain.value=vol; s.connect(f).connect(g).connect(a.destination); s.start(t0); }
+const SFX = {
+  reveal(){ noise(.22,{vol:.18, freq:900, sweep:4200, q:1.2}); tone(660,.08,{type:'triangle',vol:.05,at:.12}); },
+  unmask(){ noise(.12,{vol:.35, freq:180, q:.7}); tone(90,.25,{type:'sine',vol:.3,to:50}); [523,659,784].forEach((f,i)=>tone(f,.35,{type:'triangle',vol:.08,at:.18+i*.07})); },
+  award(){ tone(988,.09,{type:'square',vol:.06}); tone(1319,.22,{type:'square',vol:.06,at:.08}); },
+  flip(){ noise(.05,{vol:.12, freq:2600, q:2}); },
+  next(){ noise(.25,{vol:.1, freq:3000, sweep:600, q:.9}); },
+  tick(){ tone(1200,.04,{type:'square',vol:.05}); },
+  warn(){ tone(740,.12,{type:'triangle',vol:.1}); tone(740,.12,{type:'triangle',vol:.1,at:.18}); },
+  buzz(){ tone(196,.7,{type:'square',vol:.16}); },
+  over(){ [392,523,659,784,1047].forEach((f,i)=>tone(f,.3,{type:'triangle',vol:.09,at:i*.12})); },
+  swap(){ tone(440,.12,{type:'sawtooth',vol:.06,to:880}); tone(880,.12,{type:'sawtooth',vol:.06,to:440,at:.13}); },
+};
+function play(n){ if(SOUND && !IS_HOST() && SFX[n]) try{ SFX[n](); }catch(e){} }
+function buzz(){ play('buzz'); }
+function setSound(on){ SOUND=on; try{ localStorage.setItem('gw-sound', on?'on':'off'); }catch(e){} $('soundBtn').textContent = on ? 'Sound on' : 'Sound off'; $('soundBtn').setAttribute('aria-pressed', on); if(on) ac(); }
+let PREV=null;
+function sfxDiff(){
+  const pts = S.players.reduce((a,p)=>a+p.s,0) + Object.values(S.podPts||{}).reduce((a,v)=>a+v,0);
+  const now = {idx:S.idx, shown:S.shown, revealed:S.revealed, pts, down:S.down.length, over:S.gOver, seed:S.seed};
+  if(PREV && PREV.seed===now.seed){
+    if(now.idx!==PREV.idx) play('next');
+    else if(now.revealed && !PREV.revealed){ play('unmask'); if(itemsFor(cur()).some(x=>x.swap)) setTimeout(()=>play('swap'), 650); }
+    else if(now.shown>PREV.shown) play('reveal');
+    if(now.pts>PREV.pts) setTimeout(()=>play('award'), now.revealed && !PREV.revealed ? 450 : 0);
+    if(now.over && !PREV.over) setTimeout(()=>play('over'), 900);
+  }
+  PREV = now;
+}
+let lastTick=null, gWarned=false;
 function paintTimer(){
   const on = S.tlen>0 && !!cur() && !S.revealed;
   const left = timeLeft();
@@ -414,6 +598,7 @@ function paintTimer(){
   if(on){ $('tfill').style.transform=`scaleX(${Math.max(0,left/S.tlen)})`; $('tbar').classList.toggle('low',left<=10);
     $('tbtn').innerHTML = (running()?'Pause timer':(left<S.tlen&&left>0?'Resume timer':'Start timer'))+' <span class="kbd">T</span>'; }
   $('hT').hidden = !on; $('hT').textContent = running()?'Pause timer':(left<S.tlen&&left>0?'Resume timer':'Start timer');
+  if(on && running() && left>0 && left<=5){ const s=Math.ceil(left); if(s!==lastTick){ lastTick=s; play('tick'); } }
   if(on && running() && left<=0 && !timeupFired){
     timeupFired=true; S.tEnd=null; S.tLeft=0;
     const c=$('case'); c.classList.remove('timeup'); void c.offsetWidth; c.classList.add('timeup');
@@ -432,6 +617,7 @@ function toggleGameClock(){ if(!S.glen) return; if(S.gOver){ S.gDismiss=false; s
 function paintGameClock(){
   const on = S.glen>0;
   const left = gLeftNow();
+  if(on && gRunning() && left<=60 && left>59 && !gWarned){ gWarned=true; play('warn'); } if(on && left>61) gWarned=false;
   [['gclock','gclockT'],['hG','hGT']].forEach(([b,tx])=>{ const el=$(b); el.hidden=!on; if(!on) return;
     $(tx).textContent = S.gOver ? "TIME'S UP" : fmt(left);
     el.classList.toggle('paused', !gRunning() && !S.gOver && left<S.glen);
@@ -440,14 +626,14 @@ function paintGameClock(){
     el.title = S.gOver ? 'Game over: show final scores' : (gRunning() ? 'Pause the game clock (G)' : 'Start the game clock (G)'); });
   if(on && gRunning() && left<=0 && !S.gOver && !gFired){
     gFired=true; S.gOver=true; S.gDismiss=false; S.gEnd=null; S.gLeft=0; pauseTimer();
-    if(!IS_HOST()){ buzz(); setTimeout(buzz, 450); }
+    buzz(); setTimeout(buzz, 450);
     store(); render();
   }
 }
 function renderOver(){
   const show = S.gOver && !S.gDismiss && !IS_HOST();
   $('over').hidden = !show; if(!show) return;
-  const ranked = S.players.map((p,i)=>({...p,i})).sort((a,b)=>b.s-a.s);
+  const ranked = results().sort((a,b)=>b.s-a.s);
   const top = ranked.length ? ranked[0].s : null;
   $('overList').innerHTML = ranked.length ? ranked.map((p,k)=>`<li class="${p.s===top?'win':''}"><b>${k+1}</b><span>${esc(p.n)}${p.s===top?' ★':''}</span><span>${p.s}</span></li>`).join('') : '<li><span></span><span>No players on the scoreboard</span><span></span></li>';
   $('overSub').textContent = `${S.done.length} suspect${S.done.length===1?'':'s'} attributed in ${fmt(S.glen)}.`;
@@ -460,9 +646,13 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 function render(){
   $('game').hidden = IS_HOST(); $('host').hidden = !IS_HOST();
   $('tlen').value = String(S.tlen||0); $('glen').value = String(S.glen||0);
+  $('mode').value = S.mode; $('diff').value = S.diff; $('vary').value = S.vary ? '1' : '0'; $('fresh').checked = !!S.fresh;
+  $('modeDesc').textContent = [MODES[S.mode].desc, DIFFS[S.diff]].filter(Boolean).join(' ');
+  renderSeason();
   $('gcode').textContent = codeOf() || '—';
   if(IS_HOST()) renderHost(); else renderGame();
   paintTimer(); paintGameClock(); renderOver();
+  if(!IS_HOST()) sfxDiff();
 }
 function renderGame(){
   const p = cur();
@@ -480,11 +670,11 @@ function renderGame(){
     $('caseId').textContent = `Suspect ${String(S.idx+1).padStart(2,'0')} / ${S.deck.length}`;
     const w = worth();
     $('worth').textContent = S.revealed ? 'Unmasked' : (S.shown===0 ? 'Reveal the first indicator' : `Guess now: ${w} pt${w>1?'s':''}`);
-    const items = p.c.map((c,i)=>({lbl:`IOC ${i+1}`, txt:c, team:false, src:p.cs[i]}));
-    items.push({lbl:'Team', txt:DATA.teams[p.t], team:true});
+    const items = itemsFor(p);
     $('clues').innerHTML = items.map((it,i)=>{
       const open = S.revealed || i < S.shown;
-      return `<li class="clue ${open?'open':''} ${it.team?'team':''}"><span class="lbl">${it.lbl}</span><span class="txt"><span class="ph">${esc(it.txt)}</span>${S.revealed&&it.src?srcLink(it.src):''}<span class="bar" aria-hidden="true"></span></span></li>`;
+      const sw = S.revealed && it.swap;
+      return `<li class="clue ${open?'open':''} ${it.team?'team':''} ${sw?'swapped':''}"><span class="lbl">${it.lbl}</span><span class="txt"><span class="ph">${esc(it.txt)}</span>${sw?`<span class="swaptag">↔ Swapped in: this one belongs to ${esc(it.swap)}</span>`:''}${S.revealed&&it.src?srcLink(it.src):''}<span class="bar" aria-hidden="true"></span></span></li>`;
     }).join('');
     $('next').disabled = S.revealed || S.shown >= items.length;
     $('unmask').disabled = S.revealed;
@@ -502,7 +692,8 @@ function renderGame(){
       $('meta').textContent = S.shown===0 ? 'Reveal indicators one at a time. Guess early for more points.' : 'Shout your guess, or flip suspects down on the board.';
       $('sources').hidden=true;
     }
-    $('flipTeam').disabled = !(S.revealed || S.shown >= items.length);
+    const ti = items.findIndex(it=>it.team);
+    $('flipTeam').disabled = !(S.revealed || (ti>=0 && S.shown > ti));
   }
   renderBoard(); renderPlayers();
 }
@@ -523,8 +714,19 @@ function renderBoard(){
   $('count').textContent = `${DATA.people.length - S.down.length} of ${DATA.people.length} standing`;
 }
 function renderPlayers(){
+  const w = worth(); const p = cur();
+  if(S.mode==='showdown'){
+    const pods = TEAM_KEYS.filter(k=>playable.some(x=>x.t===k));
+    const max = Math.max(0,...pods.map(k=>S.podPts[k]||0));
+    $('addForm').hidden = true;
+    $('players').innerHTML = pods.map(k=>{ const own = p && p.t===k; const s = S.podPts[k]||0; return `<li class="pl ${s>0&&s===max?'lead':''}"><span class="pn">${esc(DATA.teams[k])}</span><span class="pts">${s}</span>
+    <button type="button" class="sm award" data-a="award" data-k="${k}" ${w&&!own?'':'disabled'} title="${own?'A pod can\'t score on its own member':'Award current points'}">+${w||0}</button>
+    <button type="button" class="sm" data-a="minus" data-k="${k}" aria-label="Subtract a point from ${esc(DATA.teams[k])}">−</button>
+    <button type="button" class="sm" data-a="plus" data-k="${k}" aria-label="Add a point to ${esc(DATA.teams[k])}">+</button></li>`; }).join('');
+    return;
+  }
+  $('addForm').hidden = false;
   const max = Math.max(0,...S.players.map(p=>p.s));
-  const w = worth();
   $('players').innerHTML = S.players.map((pl,i)=>`<li class="pl ${pl.s>0&&pl.s===max?'lead':''}"><span class="pn">${esc(pl.n)}</span><span class="pts">${pl.s}</span>
     <button type="button" class="sm award" data-a="award" data-i="${i}" ${w?'':'disabled'} title="Award current points">+${w||0}</button>
     <button type="button" class="sm" data-a="minus" data-i="${i}" aria-label="Subtract a point from ${esc(pl.n)}">−</button>
@@ -544,23 +746,24 @@ function renderHost(){
     $('hName').textContent = p.n; $('hMeta').textContent = `${p.ti} · ${DATA.teams[p.t]}`;
     const hasPic = DATA.sprite && p.i!=null; const m=$('hMug');
     m.className='mug on'+(hasPic?' pic':''); m.style.cssText=`--tc:${tc(p.t)};${picStyle(p)}`; m.textContent=initials(p.n);
-    const items = p.c.concat([`Team: ${DATA.teams[p.t]}`]);
-    $('hClues').innerHTML = items.map((c,i)=>{ const s=p.cs[i]; return `<li class="${(S.revealed||i<S.shown)?'on':''}"><b>${(S.revealed||i<S.shown)?'✓':i+1}</b><span>${esc(c)}${s&&s.card?'<span class="newtag">NEW</span>':''}${s?`<span class="hq">“${esc(s.q)}”</span>${srcLink(s)}`:''}</span></li>`; }).join('');
+    const items = itemsFor(p);
+    $('hClues').innerHTML = items.map((it,i)=>{ const on = S.revealed||i<S.shown; const s=it.src; return `<li class="${on?'on':''}"><b>${on?'✓':i+1}</b><span>${it.team?'Pod: ':''}${esc(it.txt)}${s&&s.card?'<span class="newtag">NEW</span>':''}${it.swap?`<span class="swaptag">↔ Swap: belongs to ${esc(it.swap)}</span>`:''}${s?`<span class="hq">“${esc(s.q)}”</span>${srcLink(s)}`:''}</span></li>`; }).join('');
   }
   $('hNext').disabled = !p || S.revealed || S.shown >= (p?totalClues(p):0);
   $('hUnmask').disabled = !p || S.revealed; $('hSkip').disabled = !p;
   $('hUp').innerHTML = S.deck.slice(S.idx+1).filter(n=>!isSkipped(n)).slice(0,5).map(n=>`<li>${esc(n)}</li>`).join('') || '<li>End of deck</li>';
   $('hPass').disabled = !p;
+  $('hMode').textContent = [MODES[S.mode].desc, DIFFS[S.diff]].filter(Boolean).join(' ');
   $('hKey').innerHTML = S.deck.map((n,i)=>`<tr data-i="${i}" class="${i===S.idx?'cur':''} ${i<S.idx&&!isSkipped(n)?'dn':''} ${isSkipped(n)?'sk':''}"><td>${i+1}</td><td>${esc(n)}</td><td>${esc(DATA.teams[byName[n].t].replace(/ \(.*\)/,''))}</td><td class="skc"><button type="button" class="skb" data-skip="${esc(n)}" title="${isSkipped(n)?'Put back in the game':'Leave out of this game'}">${isSkipped(n)?'Skipped':'Skip'}</button></td></tr>`).join('');
   const r = $('hKey').querySelector('.cur'); if(r) r.scrollIntoView({block:'nearest'});
 }
 
 /* ---------- actions ---------- */
 function reveal(){ const p=cur(); if(!p||S.revealed) return; if(S.shown < totalClues(p)) { S.shown++; if(S.shown===1 && S.tlen && !running() && S.tLeft==null) startTimer(); if(S.glen && !gRunning() && S.gLeft==null && !S.gOver) startGameClock(); store(); render(); } }
-function unmask(){ const p=cur(); if(!p||S.revealed) return; S.revealed=true; pauseTimer(); if(!S.done.includes(p.n)) S.done.push(p.n); store(); render(); }
+function unmask(){ const p=cur(); if(!p||S.revealed) return; S.revealed=true; pauseTimer(); if(!S.done.includes(p.n)) S.done.push(p.n); if(!IS_HOST()) recordSeen(p.n); store(); render(); }
 const isSkipped = n => (S.skip||[]).includes(n);
 function advance(){ S.idx++; while(S.idx < S.deck.length && isSkipped(S.deck[S.idx])) S.idx++; S.shown=0; S.revealed=false; S.down=[]; resetTimer(); }
-function next(){ if(!cur()) return; const p=cur(); if(!S.done.includes(p.n)) S.done.push(p.n); advance(); store(); render(); }
+function next(){ if(!cur()) return; const p=cur(); if(!S.done.includes(p.n)){ S.done.push(p.n); if(!IS_HOST()) recordSeen(p.n); } advance(); store(); render(); }
 function passCurrent(){ const p=cur(); if(!p) return; S.skip=(S.skip||[]).concat(isSkipped(p.n)?[]:[p.n]); advance(); store(); render(); passNote(); }
 function toggleSkip(n){ const was=isSkipped(n); S.skip = was ? S.skip.filter(x=>x!==n) : (S.skip||[]).concat(n); if(!was && S.deck[S.idx]===n){ advance(); } store(); render(); passNote(); }
 function passNote(){ const el=$('hPassNote'); el.hidden = linked; el.textContent = linked ? '' : 'Skipped here. This window isn\'t linked to the game, so press → on the shared screen until the suspect number matches.'; }
@@ -575,6 +778,12 @@ $('hPass').onclick=passCurrent;
 $('hCodeForm').addEventListener('submit',e=>{ e.preventDefault(); if(!loadCode($('hCode').value)){ $('hCode').setCustomValidity('Use the code from the game screen, like 4821 or 4821-CORE'); $('hCode').reportValidity(); } else $('hCode').setCustomValidity(''); });
 $('hCode').addEventListener('input',()=>$('hCode').setCustomValidity(''));
 $('pool').onchange=e=>{ S.pool=e.target.value; newGame(); };
+$('mode').onchange=e=>{ S.mode=e.target.value; if(S.mode==='lightning' && (!S.tlen || S.tlen>30)) S.tlen=15; newGame(); };
+$('diff').onchange=e=>{ S.diff=e.target.value; newGame(); };
+$('vary').onchange=e=>{ S.vary=e.target.value==='1'; newGame(); };
+$('fresh').onchange=e=>{ S.fresh=e.target.checked; newGame(); };
+$('soundBtn').onclick=()=>setSound(!SOUND); setSound(SOUND);
+$('seasonSave').onclick=saveToSeason; $('overSave').onclick=saveToSeason; $('seasonNew').onclick=endSeason;
 $('tlen').onchange=e=>{ S.tlen=+e.target.value; resetTimer(); store(); render(); };
 $('glen').onchange=e=>{ S.glen=+e.target.value; resetGameClock(); store(); render(); };
 $('gclock').onclick=toggleGameClock; $('hG').onclick=toggleGameClock;
@@ -585,12 +794,16 @@ $('flipTeam').onclick=()=>{ const p=cur(); if(!p) return; S.down = DATA.people.f
 $('groups').addEventListener('click',e=>{
   const b=e.target.closest('.tile'); if(!b) return; const n=b.dataset.n;
   S.down = S.down.includes(n) ? S.down.filter(x=>x!==n) : S.down.concat(n);
-  b.classList.toggle('down'); b.setAttribute('aria-pressed', S.down.includes(n));
+  b.classList.toggle('down'); b.setAttribute('aria-pressed', S.down.includes(n)); play('flip');
   $('count').textContent = `${DATA.people.length - S.down.length} of ${DATA.people.length} standing`; store();
 });
 $('addForm').addEventListener('submit',e=>{ e.preventDefault(); const v=$('pname').value.trim(); if(!v) return; S.players.push({n:v,s:0}); $('pname').value=''; store(); renderPlayers(); });
 $('players').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b) return; const pl=S.players[+b.dataset.i]; if(!pl) return;
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.k){ const k=b.dataset.k; const v=S.podPts[k]||0;
+    if(b.dataset.a==='award'){ S.podPts[k]=v+worth(); unmask(); return; }
+    S.podPts[k] = v + (b.dataset.a==='plus'?1:-1); store(); renderPlayers(); return; }
+  const pl=S.players[+b.dataset.i]; if(!pl) return;
   if(b.dataset.a==='award'){ pl.s+=worth(); unmask(); return; }
   if(b.dataset.a==='plus') pl.s++; if(b.dataset.a==='minus') pl.s--;
   store(); renderPlayers();
@@ -602,12 +815,13 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='ArrowRight'){ next(); }
   else if(e.key==='t'||e.key==='T'){ toggleTimer(); }
   else if(e.key==='g'||e.key==='G'){ toggleGameClock(); }
+  else if(e.key==='m'||e.key==='M'){ setSound(!SOUND); }
 });
 window.addEventListener('hashchange', ()=>{ if(!IS_HOST() && !S.deck.length) newGame(); else render(); if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){} });
 
 function start(snap){
   const saved = (snap && snap.S) || load();
-  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(S.tlen==null) S.tlen=45; if(S.glen==null) S.glen=0; if(!Array.isArray(S.skip)) S.skip=[]; render(); }
+  if(saved && saved.deck && saved.deck.length && saved.seed){ S = Object.assign(S, saved); if(!MODES[S.mode]) S.mode='classic'; if(!DIFFS.hasOwnProperty(S.diff)) S.diff='normal'; if(S.vary==null) S.vary=true; if(S.fresh==null) S.fresh=true; if(!S.podPts) S.podPts={}; if(S.tlen==null) S.tlen=45; if(S.glen==null) S.glen=0; if(!Array.isArray(S.skip)) S.skip=[]; render(); }
   else if(IS_HOST()) render();
   else newGame();
   if(IS_HOST()) try{ bc && bc.postMessage({ping:1}); }catch(e){}
@@ -641,7 +855,7 @@ function start(snap){
       const at = c.level<=1 ? 0 : c.level===2 ? Math.ceil(p.c.length/2) : p.c.length;
       p.c.splice(at,0,c.clue); p.cs.splice(at,0,src);
     });
-    playable = DATA.people.filter(p=>p.c.length);
+    playable = DATA.people.filter(hasClues);
   }
   function status(msg){ $('intelStatus').textContent = msg; }
   function renderIntel(){
@@ -709,7 +923,7 @@ function start(snap){
       for(let i=0;i<fresh.length;i+=25){
         const batch = fresh.slice(i,i+25);
         const names = [...new Set(batch.map(m=>bySid[m.fromId]))];
-        const existing = names.map(n=>`${n}: ${[...base[n].c, ...cards.filter(c=>c.name===n&&c.status!=='rejected').map(c=>c.clue)].join(' | ') || '(none yet)'}`).join('\n');
+        const existing = names.map(n=>`${n}: ${[...base[n].c, ...(byName[n].x||[]).map(e=>e.t), ...cards.filter(c=>c.name===n&&c.status!=='rejected').map(c=>c.clue)].join(' | ') || '(none yet)'}`).join('\n');
         status(`Drafting clues from ${fresh.length} new post${fresh.length>1?'s':''}…`);
         const prompt = `You write clues for a coworker "Guess Who" game that is played on a shared screen. From the Slack messages below, pick out light, fun personal facts each author states about THEMSELVES (hobbies, pets and pet names, travel, food opinions, sports, games, shows, music, talents, collections, past jobs, big-city region).
 
@@ -730,7 +944,7 @@ Reply with only a JSON array (empty if nothing qualifies). Each item: {"mid": me
           const name = bySid[m.fromId];
           if(!norm(m.text).includes(norm(it.quote))) continue;
           const clue = String(it.clue).slice(0,140);
-          const others = [...base[name].c, ...cards.filter(c=>c.name===name).map(c=>c.clue)];
+          const others = [...base[name].c, ...(byName[name].x||[]).map(e=>e.t), ...cards.filter(c=>c.name===name).map(c=>c.clue)];
           if(others.some(x=>sim(x,clue)>=0.6)) continue;
           const id = hash(m.url);
           const card = {id, mid:id, name, clue, quote:String(it.quote).slice(0,160), level:Math.min(3,Math.max(1,+it.level||2)), url:m.url, src:`${m.channel} ${m.time||today}`, status:'pending', foundAt:Date.now()};

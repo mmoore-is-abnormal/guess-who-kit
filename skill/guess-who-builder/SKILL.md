@@ -35,7 +35,7 @@ After they finish, read every fact yourself. Drop or fix anything that fails `re
 
 ## 4. Curate clues
 
-For each person, write 2-4 clues ordered vague to specific. The engine appends the team as the final clue automatically.
+For each person, write 2-4 core clues ordered vague to specific, and keep any further good facts as extra clues (`x`, each with a level 1-3) so replays draw a different mix. The engine adds the team as a clue automatically (first on Easy, last on Normal, left out on Hard).
 
 - First clue should fit several people (a region, a common hobby, a snack opinion); the last should nearly give it away (a named pet, an unusual past job, a talent). Overlaps between people (two people with the same hobby, several in the same city) make the game better, so keep them.
 - Use they/their for people, since pronouns usually aren't stated.

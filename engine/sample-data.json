@@ -37,6 +37,26 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
+   ],
+   "x": [
+    {
+     "t": "Grows tomatoes on a balcony.",
+     "l": 1,
+     "s": {
+      "s": "#example-channel 2026-01-01",
+      "u": "",
+      "q": "Sample quote."
+     }
+    },
+    {
+     "t": "Collects vintage postcards.",
+     "l": 2,
+     "s": {
+      "s": "#example-channel 2026-01-01",
+      "u": "",
+      "q": "Sample quote."
+     }
+    }
    ]
   },
   {
@@ -64,7 +84,8 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   },
   {
    "n": "Casey Placeholder",
@@ -91,14 +112,16 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   },
   {
    "n": "Devon Demo",
    "t": "blue",
    "ti": "Analyst",
    "c": [],
-   "cs": []
+   "cs": [],
+   "x": []
   },
   {
    "n": "Emery Mock",
@@ -124,6 +147,26 @@
      "s": "#example-channel 2026-01-01",
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ],
+   "x": [
+    {
+     "t": "Knits during meetings.",
+     "l": 1,
+     "s": {
+      "s": "#example-channel 2026-01-01",
+      "u": "",
+      "q": "Sample quote."
+     }
+    },
+    {
+     "t": "Once biked across Iowa.",
+     "l": 3,
+     "s": {
+      "s": "#example-channel 2026-01-01",
+      "u": "",
+      "q": "Sample quote."
+     }
     }
    ]
   },
@@ -152,7 +195,8 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   },
   {
    "n": "Gray Fixture",
@@ -179,14 +223,16 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   },
   {
    "n": "Harper Stub",
    "t": "green",
    "ti": "Engineer",
    "c": [],
-   "cs": []
+   "cs": [],
+   "x": []
   },
   {
    "n": "Indigo Draft",
@@ -213,7 +259,8 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   },
   {
    "n": "Jordan Sketch",
@@ -239,6 +286,17 @@
      "s": "#example-channel 2026-01-01",
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
+    }
+   ],
+   "x": [
+    {
+     "t": "Makes a mean chili.",
+     "l": 1,
+     "s": {
+      "s": "#example-channel 2026-01-01",
+      "u": "",
+      "q": "Sample quote."
+     }
     }
    ]
   },
@@ -267,7 +325,8 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   },
   {
    "n": "Logan Outline",
@@ -294,7 +353,8 @@
      "u": "",
      "q": "Sample quote: the builder fills this with the person's own words."
     }
-   ]
+   ],
+   "x": []
   }
  ]
 }
